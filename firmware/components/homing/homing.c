@@ -3,7 +3,7 @@
  *
  * Diferencias frente a Scara_Main.c:
  *   - Los vTaskDelay(100) despues de tocar un final se volvieron fases de
- *     pausa (PAUSE_A / PAUSE_B). Asi homing_update() nunca bloquea la tarea.
+ *     pausa (PAUSE_L / PAUSE_R). Asi homing_update() nunca bloquea la tarea.
  *   - 'start' reinicia desde el motor 1; 'resume' continua donde quedo.
  *   - Los comandos llegan por ROS 2 (/scara/cmd) en vez de 's'/'x' por serial.
  */
@@ -18,14 +18,14 @@
 #define BRAKE_PAUSE_MS 100
 
 typedef enum {
-    PH_SEEK_A = 0,
-    PH_PAUSE_A,
-    PH_SEEK_B,
-    PH_PAUSE_B,
+    PH_SEEK_L = 0,
+    PH_PAUSE_L,
+    PH_SEEK_R,
+    PH_PAUSE_R,
     PH_BACKOFF,
 } phase_t;
 
-static const char *PHASE_NAMES[] = { "SEEK_A", "PAUSE_A", "SEEK_B", "PAUSE_B", "BACKOFF" };
+static const char *PHASE_NAMES[] = { "SEEK_L", "PAUSE_L", "SEEK_R", "PAUSE_R", "BACKOFF" };
 
 /* Banderas escritas desde otra tarea */
 static volatile bool start_req  = false;
@@ -35,7 +35,7 @@ static volatile bool abort_req  = false;
 /* Estado (solo lo escribe homing_update) */
 static volatile homing_state_t state = HOMING_IDLE;
 static volatile int      cur_motor = 0;
-static volatile phase_t  phase = PH_SEEK_A;
+static volatile phase_t  phase = PH_SEEK_L;
 static volatile uint32_t seq = 0;
 static TickType_t phase_t0 = 0;
 static TickType_t paused_elapsed = 0;   /* tiempo ya transcurrido en la fase al abortar */
@@ -90,7 +90,7 @@ static bool handle_requests(void)
         apply_homing_speeds();
         cur_motor = 0;
         state = HOMING_RUNNING;
-        set_phase(PH_SEEK_A);
+        set_phase(PH_SEEK_L);
         return true;
     }
 
@@ -121,30 +121,30 @@ void homing_update(void)
     const int m = cur_motor;
 
     switch (phase) {
-    case PH_SEEK_A:
+    case PH_SEEK_L:
         motor_set_dir(m, 1, 0);
         if (limit_a_pressed(m)) {
             motor_brake(m);
-            set_phase(PH_PAUSE_A);
+            set_phase(PH_PAUSE_L);
         }
         break;
 
-    case PH_PAUSE_A:
+    case PH_PAUSE_L:
         motor_brake(m);
         if (elapsed_ms(BRAKE_PAUSE_MS)) {
-            set_phase(PH_SEEK_B);
+            set_phase(PH_SEEK_R);
         }
         break;
 
-    case PH_SEEK_B:
+    case PH_SEEK_R:
         motor_set_dir(m, 0, 1);
         if (limit_b_pressed(m)) {
             motor_brake(m);
-            set_phase(PH_PAUSE_B);
+            set_phase(PH_PAUSE_R);
         }
         break;
 
-    case PH_PAUSE_B:
+    case PH_PAUSE_R:
         motor_brake(m);
         if (elapsed_ms(BRAKE_PAUSE_MS)) {
             set_phase(PH_BACKOFF);
@@ -157,7 +157,7 @@ void homing_update(void)
             motor_coast(m);
             if (m + 1 < NUM_MOTORS) {
                 cur_motor = m + 1;
-                set_phase(PH_SEEK_A);
+                set_phase(PH_SEEK_L);
             } else {
                 state = HOMING_DONE;
                 seq++;

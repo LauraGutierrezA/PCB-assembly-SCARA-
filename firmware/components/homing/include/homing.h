@@ -44,7 +44,7 @@ homing_state_t homing_get_state(void);
  * /scara/status solo cuando hay algo nuevo. */
 uint32_t homing_status_seq(void);
 
-/* Texto legible del estado, p. ej. "HOMING M2 SEEK_B", "ABORTED M2 SEEK_B"
+/* Texto legible del estado, p. ej. "HOMING M2 SEEK_R", "ABORTED M2 SEEK_R"
  * o "HOMED". */
 void homing_status_str(char *buf, size_t len);
 

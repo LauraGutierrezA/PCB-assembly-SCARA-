@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'fsm_node = scara_app.fsm_node:main',
+            'scara_gui = scara_app.scara_gui:main',
         ],
     },
 )

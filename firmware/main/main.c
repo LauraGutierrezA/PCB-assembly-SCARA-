@@ -9,8 +9,9 @@
  * Dos tareas:
  *   - control_task   (nucleo 1, cada 10 ms): homing y, mas adelante, PID + IK.
  *                    No depende de micro-ROS: si la USB se cae, sigue corriendo.
- *   - micro_ros_task (nucleo 0): comunicacion con ROS 2, con reconexion
- *                    automatica al agente (ya no hay que presionar EN).
+ *   - micro_ros_task (nucleo 0): comunicacion con ROS 2. Espera al agente
+ *                    solo (no hay que presionar EN). Si el agente se pierde,
+ *                    detiene los motores y reinicia el ESP32 para reconectar.
  *
  * Interfaz ROS 2:
  *   /scara/cmd     (std_msgs/String, PC -> ESP32):
@@ -155,17 +156,19 @@ static bool create_entities(void)
     return true;
 }
 
-static void destroy_entities(void)
+/*
+ * Si se pierde el agente (p. ej. se cerro y se volvio a abrir), el ESP32 se
+ * REINICIA en vez de intentar reconstruir la sesion en caliente. Observado
+ * en pruebas: la reconstruccion en caliente quedaba en un ciclo de
+ * conectar/desconectar sin crear el nodo, mientras que un arranque limpio
+ * siempre conecta.
+ * Efectos: los motores se detienen y el homing vuelve a IDLE.
+ */
+static void restart_on_agent_loss(void)
 {
-    rmw_context_t *rmw_context = rcl_context_get_rmw_context(&support.context);
-    (void)rmw_uros_set_context_entity_destroy_session_timeout(rmw_context, 0);
-
-    RCSOFT(rcl_subscription_fini(&cmd_sub, &node));
-    RCSOFT(rcl_publisher_fini(&status_pub, &node));
-    RCSOFT(rcl_timer_fini(&status_timer));
-    RCSOFT(rclc_executor_fini(&executor));
-    RCSOFT(rcl_node_fini(&node));
-    RCSOFT(rclc_support_fini(&support));
+    motors_stop_all();
+    vTaskDelay(pdMS_TO_TICKS(50));
+    esp_restart();
 }
 
 typedef enum { WAITING_AGENT, AGENT_CONNECTED } agent_state_t;
@@ -184,7 +187,7 @@ static void micro_ros_task(void *arg)
                     st = AGENT_CONNECTED;
                     last_check = xTaskGetTickCount();
                 } else {
-                    destroy_entities();
+                    restart_on_agent_loss();   /* arranque limpio */
                 }
             }
             vTaskDelay(pdMS_TO_TICKS(500));
@@ -195,10 +198,7 @@ static void micro_ros_task(void *arg)
             if ((xTaskGetTickCount() - last_check) >= pdMS_TO_TICKS(AGENT_CHECK_MS)) {
                 last_check = xTaskGetTickCount();
                 if (rmw_uros_ping_agent(100, 3) != RMW_RET_OK) {
-                    /* Agente perdido: limpiar y volver a esperar.
-                     * El homing sigue corriendo en el nucleo 1. */
-                    destroy_entities();
-                    st = WAITING_AGENT;
+                    restart_on_agent_loss();   /* agente perdido */
                 }
             }
             vTaskDelay(pdMS_TO_TICKS(10));
