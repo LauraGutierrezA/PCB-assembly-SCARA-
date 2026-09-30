@@ -3,3 +3,6 @@ managed_components
 dependencies.lock
 sdkconfig
 sdkconfig.old
+microros_ws/build/
+microros_ws/install/
+microros_ws/log/

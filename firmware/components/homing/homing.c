@@ -123,7 +123,7 @@ void homing_update(void)
     switch (phase) {
     case PH_SEEK_L:
         motor_set_dir(m, 1, 0);
-        if (limit_a_pressed(m)) {
+        if (limit_l_pressed(m)) {
             motor_brake(m);
             set_phase(PH_PAUSE_L);
         }
@@ -138,7 +138,7 @@ void homing_update(void)
 
     case PH_SEEK_R:
         motor_set_dir(m, 0, 1);
-        if (limit_b_pressed(m)) {
+        if (limit_r_pressed(m)) {
             motor_brake(m);
             set_phase(PH_PAUSE_R);
         }

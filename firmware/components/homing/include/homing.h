@@ -2,8 +2,8 @@
  * homing.h - Maquina de estados del homing (misma logica de Scara_Main.c).
  *
  * Por cada motor, en orden M1 -> M2 -> M3:
- *   1. Avanza (1,0) hasta tocar el final A, frena 100 ms.
- *   2. Retrocede (0,1) hasta tocar el final B, frena 100 ms.
+ *   1. Avanza (1,0) hasta tocar el final L, frena 100 ms.
+ *   2. Retrocede (0,1) hasta tocar el final R, frena 100 ms.
  *   3. Avanza (1,0) durante backoff_time_ms y se detiene (centro aproximado).
  *
  * Comandos:

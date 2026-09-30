@@ -1,7 +1,7 @@
 /*
  * motors.h - Manejo de los 3 motores DC (TB6612FNG) y sus finales de carrera.
  *
- * Basado en Scara_Main.c (homing original). Mismos pines y parametros.
+ * Basado en Scara_Main.c (homing original). Pines en pins.h.
  *
  * Logica TB6612 (IN1, IN2):
  *   (1, 0) -> un sentido        (0, 1) -> sentido contrario
@@ -20,8 +20,8 @@ typedef struct {
     int pwm_pin;
     int dir1_pin;
     int dir2_pin;
-    int ls_a_pin;              /* final de carrera A */
-    int ls_b_pin;              /* final de carrera B */
+    int ls_l_pin;              /* final de carrera L (izquierdo) */
+    int ls_r_pin;              /* final de carrera R (derecho) */
     ledc_channel_t pwm_channel;
     uint32_t backoff_time_ms;  /* tiempo de retroceso despues de B (homing por tiempo) */
     uint32_t homing_speed;     /* duty PWM 0..1023 (10 bits) */
@@ -37,7 +37,7 @@ void motor_brake(int i);        /* (1,1) */
 void motor_coast(int i);        /* (0,0) */
 void motors_stop_all(void);     /* todos en (0,0) */
 
-bool limit_a_pressed(int i);
-bool limit_b_pressed(int i);
+bool limit_l_pressed(int i);
+bool limit_r_pressed(int i);
 
 #endif /* MOTORS_H */
