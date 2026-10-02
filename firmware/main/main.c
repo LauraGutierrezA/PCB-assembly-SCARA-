@@ -3,8 +3,12 @@
  *
  * Aqui vive la logica de la aplicacion (consignas, IK, control). Los modulos
  * de bajo nivel estan en components/:
- *   components/motors  -> PWM, direccion y finales de carrera
- *   components/homing  -> maquina de estados del homing
+ *   components/motors     -> PWM, direccion y finales de carrera
+ *   components/homing     -> maquina de estados del homing
+ *   components/kinematics -> cinematica directa e inversa (ik.c)
+ *   components/control    -> referencias articulares y lazo de control
+ * Los parametros del robot (d1..d6, av) llegan desde la interfaz con cada
+ * consigna.
  *
  * Dos tareas:
  *   - control_task   (nucleo 1, cada 10 ms): homing y, mas adelante, PID + IK.
@@ -18,8 +22,15 @@
  *                  "start"  -> homing desde el motor 1
  *                  "resume" -> continua el homing donde quedo
  *                  "stop"   -> detiene todo
- *   /scara/status  (std_msgs/String, ESP32 -> PC): "IDLE", "HOMING M1 SEEK_A",
- *                  "ABORTED M2 SEEK_B", "HOMED". Se publica al cambiar y cada 1 s.
+ *   /scara/status  (std_msgs/String, ESP32 -> PC): "IDLE", "HOMING M1 SEEK_L",
+ *                  "ABORTED M2 SEEK_R", "HOMED". Se publica al cambiar y cada 1 s.
+ *   /scara/target  (std_msgs/Float32MultiArray, PC -> ESP32), 11 valores:
+ *                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]
+ *                  (mm, av en mm/vuelta, codo = +1 o -1)
+ *   /scara/ik      (std_msgs/String, ESP32 -> PC): resultado de la IK, p. ej.
+ *                  "OK x=300.0 y=150.0 z=0.0 th1=-2.049 th2=66.620 th3=44.171 codo=1 homed=1"
+ *                  "ERR x=500.0 y=0.0 z=0.0 reason=OUT_OF_REACH homed=1"
+ *                  th1, th2 en grados; th3 en radianes (angulo del motor del tornillo).
  *
  * Transporte: UART0 (GPIO1 TX / GPIO3 RX) a 115200. En menuconfig:
  *   micro-ROS Settings -> UART TXD = 1, RXD = 3; consola -> None.
@@ -38,6 +49,7 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <std_msgs/msg/string.h>
+#include <std_msgs/msg/float32_multi_array.h>
 
 #include <rmw_microxrcedds_c/config.h>
 #include <rmw_microros/rmw_microros.h>
@@ -45,6 +57,8 @@
 
 #include "motors.h"
 #include "homing.h"
+#include "ik.h"
+#include "control.h"
 
 /* ---------------- Parametros ---------------- */
 #define CONTROL_PERIOD_MS     10
@@ -53,6 +67,8 @@
 #define AGENT_CHECK_MS        1000    /* cada cuanto verificar el agente */
 #define CMD_BUF_LEN           32
 #define STATUS_BUF_LEN        48
+#define IK_BUF_LEN            160
+#define TARGET_LEN            11      /* x y z d1 d2 d3 d4 d5 d6 av codo */
 
 /* Si algo falla al crear entidades, devuelve false (no mata la tarea) */
 #define RCRETURN(fn) { rcl_ret_t rc_ = (fn); if (rc_ != RCL_RET_OK) { return false; } }
@@ -66,6 +82,7 @@ static void control_task(void *arg)
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
         homing_update();
+        control_update();
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 }
@@ -77,7 +94,9 @@ static rcl_allocator_t   allocator;
 static rclc_support_t    support;
 static rcl_node_t        node;
 static rcl_subscription_t cmd_sub;
+static rcl_subscription_t target_sub;
 static rcl_publisher_t   status_pub;
+static rcl_publisher_t   ik_pub;
 static rcl_timer_t       status_timer;
 static rclc_executor_t   executor;
 
@@ -85,6 +104,11 @@ static std_msgs__msg__String cmd_msg;
 static std_msgs__msg__String status_msg;
 static char cmd_buf[CMD_BUF_LEN];
 static char status_buf[STATUS_BUF_LEN];
+
+static std_msgs__msg__Float32MultiArray target_msg;
+static float target_buf[TARGET_LEN];
+static std_msgs__msg__String ik_msg;
+static char ik_buf[IK_BUF_LEN];
 
 static uint32_t   last_seq = UINT32_MAX;
 static TickType_t last_pub = 0;
@@ -107,6 +131,45 @@ static void cmd_callback(const void *msgin)
         homing_abort();
     }
     /* comandos desconocidos se ignoran */
+}
+
+/* Consigna cartesiana + parametros del robot -> IK -> referencias de control.
+ * El control todavia esta vacio: solo guarda las referencias. */
+static void target_callback(const void *msgin)
+{
+    const std_msgs__msg__Float32MultiArray *m =
+        (const std_msgs__msg__Float32MultiArray *)msgin;
+    const int homed = (homing_get_state() == HOMING_DONE) ? 1 : 0;
+
+    if (m->data.size != TARGET_LEN) {
+        snprintf(ik_buf, sizeof(ik_buf), "ERR reason=BAD_MESSAGE n=%u homed=%d",
+                 (unsigned)m->data.size, homed);
+    } else {
+        const float *v = m->data.data;
+        const point_t target = { v[0], v[1], v[2] };
+        const rrp_params_t params = { v[3], v[4], v[5], v[6], v[7], v[8], v[9] };
+        const int codo = (v[10] >= 0.0f) ? 1 : -1;
+        joints_t q;
+        ik_status_t st = rrp_ik(&params, &target, codo, &q);
+
+        if (st == IK_OK) {
+            control_set_reference(&q);
+            snprintf(ik_buf, sizeof(ik_buf),
+                     "OK x=%.1f y=%.1f z=%.1f th1=%.3f th2=%.3f th3=%.3f codo=%d homed=%d",
+                     target.x, target.y, target.z,
+                     q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3,
+                     codo, homed);
+        } else {
+            snprintf(ik_buf, sizeof(ik_buf),
+                     "ERR x=%.1f y=%.1f z=%.1f reason=%s homed=%d",
+                     target.x, target.y, target.z, ik_status_name(st), homed);
+        }
+    }
+
+    ik_msg.data.data = ik_buf;
+    ik_msg.data.size = strlen(ik_buf);
+    ik_msg.data.capacity = sizeof(ik_buf);
+    RCSOFT(rcl_publish(&ik_pub, &ik_msg, NULL));
 }
 
 static void status_timer_cb(rcl_timer_t *timer, int64_t last_call_time)
@@ -136,8 +199,13 @@ static bool create_entities(void)
 
     RCRETURN(rclc_subscription_init_default(
         &cmd_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/cmd"));
+    RCRETURN(rclc_subscription_init_default(
+        &target_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
+        "scara/target"));
     RCRETURN(rclc_publisher_init_default(
         &status_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/status"));
+    RCRETURN(rclc_publisher_init_default(
+        &ik_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/ik"));
     RCRETURN(rclc_timer_init_default2(
         &status_timer, &support, RCL_MS_TO_NS(STATUS_PERIOD_MS), status_timer_cb, true));
 
@@ -146,10 +214,22 @@ static bool create_entities(void)
     cmd_msg.data.size = 0;
     cmd_msg.data.capacity = sizeof(cmd_buf);
 
+    /* Float32MultiArray: memoria fija para los 11 valores y sin dimensiones
+     * en el layout (desde Python se envia sin layout). */
+    target_msg.data.data = target_buf;
+    target_msg.data.size = 0;
+    target_msg.data.capacity = TARGET_LEN;
+    target_msg.layout.dim.data = NULL;
+    target_msg.layout.dim.size = 0;
+    target_msg.layout.dim.capacity = 0;
+    target_msg.layout.data_offset = 0;
+
     executor = rclc_executor_get_zero_initialized_executor();
-    RCRETURN(rclc_executor_init(&executor, &support.context, 2, &allocator));
+    RCRETURN(rclc_executor_init(&executor, &support.context, 3, &allocator));
     RCRETURN(rclc_executor_add_subscription(&executor, &cmd_sub, &cmd_msg,
                                             &cmd_callback, ON_NEW_DATA));
+    RCRETURN(rclc_executor_add_subscription(&executor, &target_sub, &target_msg,
+                                            &target_callback, ON_NEW_DATA));
     RCRETURN(rclc_executor_add_timer(&executor, &status_timer));
 
     last_seq = UINT32_MAX;   /* forzar publicacion inmediata al conectar */

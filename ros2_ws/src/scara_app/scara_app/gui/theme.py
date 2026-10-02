@@ -173,6 +173,29 @@ def stylesheet():
         background: {DANGER_BG_OFF}; border-color: {DANGER_BG_OFF}; color: {TEXT_DISABLED};
     }}
 
+    QPushButton#segment {{
+        background: transparent;
+        color: {TEXT_MUTED};
+        border: 1px solid {BORDER_CARD};
+        border-radius: 0px;
+        font-size: 14px;
+        padding: 13px 16px;
+        min-width: 44px;
+    }}
+    QPushButton#segment[position="first"] {{
+        border-top-left-radius: 4px; border-bottom-left-radius: 4px; border-right: none;
+    }}
+    QPushButton#segment[position="last"] {{
+        border-top-right-radius: 4px; border-bottom-right-radius: 4px;
+    }}
+    QPushButton#segment:checked {{
+        background: {DIVIDER};
+        color: {ACCENT};
+        border-color: {ACCENT};
+    }}
+    QPushButton#segment[position="first"]:checked {{ border-right: 1px solid {ACCENT}; }}
+    QPushButton#segment:hover:!checked {{ color: {TEXT}; }}
+
     QPushButton#textButton {{
         background: transparent;
         border: none;
@@ -181,6 +204,38 @@ def stylesheet():
         padding: 4px 0px;
     }}
     QPushButton#textButton:hover {{ color: {ACCENT}; }}
+
+    /* ---------- Paneles y campos ---------- */
+    QFrame#panel {{
+        background: {BG_PAGE};
+        border: 1px solid {DIVIDER};
+        border-radius: 4px;
+    }}
+    QFrame#panel QLabel {{
+        background: transparent;
+    }}
+    QDoubleSpinBox#coord {{
+        background: {BG_PAGE};
+        color: {TEXT};
+        border: 1px solid {BORDER_CARD};
+        border-radius: 4px;
+        padding: 10px 12px;
+        selection-background-color: {PRIMARY};
+    }}
+    QDoubleSpinBox#coord:focus {{
+        border: 1px solid {ACCENT};
+    }}
+    QDoubleSpinBox#paramBox {{
+        background: {BG_PAGE};
+        color: {TEXT};
+        border: 1px solid {DIVIDER};
+        border-radius: 4px;
+        padding: 5px 6px;
+        selection-background-color: {PRIMARY};
+    }}
+    QDoubleSpinBox#paramBox:focus {{
+        border: 1px solid {ACCENT};
+    }}
 
     /* ---------- Historial ---------- */
     QTextEdit#log {{

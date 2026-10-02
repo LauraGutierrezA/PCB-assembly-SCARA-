@@ -1,0 +1,311 @@
+[0.015s] Invoking command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/laura/scara_ws/microros_ws/src/uros/micro_ros_msgs -DCMAKE_INSTALL_PREFIX=/home/laura/scara_ws/microros_ws/install/micro_ros_msgs
+[0.061s] -- The C compiler identification is GNU 13.3.0
+[0.105s] -- The CXX compiler identification is GNU 13.3.0
+[0.118s] -- Detecting C compiler ABI info
+[0.181s] -- Detecting C compiler ABI info - done
+[0.190s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.190s] -- Detecting C compile features
+[0.190s] -- Detecting C compile features - done
+[0.198s] -- Detecting CXX compiler ABI info
+[0.270s] -- Detecting CXX compiler ABI info - done
+[0.282s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.282s] -- Detecting CXX compile features
+[0.283s] -- Detecting CXX compile features - done
+[0.286s] -- Found ament_cmake: 2.5.6 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.406s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[0.538s] -- Found rosidl_default_generators: 1.6.1 (/opt/ros/jazzy/share/rosidl_default_generators/cmake)
+[0.547s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.612s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.662s] -- Found rosidl_adapter: 4.6.9 (/opt/ros/jazzy/share/rosidl_adapter/cmake)
+[0.668s] -- Found ament_lint_auto: 0.17.5 (/opt/ros/jazzy/share/ament_lint_auto/cmake)
+[1.171s] -- Found ament_cmake_ros: 0.12.1 (/opt/ros/jazzy/share/ament_cmake_ros/cmake)
+[1.525s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.952s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.956s] -- Found python_cmake_module: 0.11.1 (/opt/ros/jazzy/share/python_cmake_module/cmake)
+[2.061s] -- Found PythonExtra: /usr/bin/python3  
+[2.496s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter Development NumPy Development.Module Development.Embed 
+[2.551s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[2.555s] -- Added test 'copyright' to check source files copyright and LICENSE
+[2.562s] -- Added test 'lint_cmake' to check CMake code style
+[2.565s] -- Added test 'xmllint' to check XML markup files
+[2.572s] -- Configuring done (2.5s)
+[2.597s] -- Generating done (0.0s)
+[2.605s] -- Build files have been written to: /home/laura/scara_ws/microros_ws/build/micro_ros_msgs
+[2.610s] Invoked command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/laura/scara_ws/microros_ws/src/uros/micro_ros_msgs -DCMAKE_INSTALL_PREFIX=/home/laura/scara_ws/microros_ws/install/micro_ros_msgs
+[2.611s] Invoking command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/laura/scara_ws/microros_ws/build/micro_ros_msgs -- -j16 -l16
+[2.653s] [  1%] [34m[1mGenerating type hashes for ROS interfaces[0m
+[2.653s] [  3%] [34m[1mGenerating Rust code for ROS interfaces[0m
+[2.660s] [  3%] Built target ament_cmake_python_copy_micro_ros_msgs
+[2.882s] running egg_info
+[2.883s] creating micro_ros_msgs.egg-info
+[2.904s] writing micro_ros_msgs.egg-info/PKG-INFO
+[2.905s] writing dependency_links to micro_ros_msgs.egg-info/dependency_links.txt
+[2.905s] writing top-level names to micro_ros_msgs.egg-info/top_level.txt
+[2.906s] writing manifest file 'micro_ros_msgs.egg-info/SOURCES.txt'
+[2.912s] [  3%] Built target micro_ros_msgs__rs
+[2.945s] [  3%] Built target micro_ros_msgs__rosidl_generator_type_description
+[2.955s] [  5%] [34m[1mGenerating C code for ROS interfaces[0m
+[2.967s] [  7%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[2.978s] reading manifest file 'micro_ros_msgs.egg-info/SOURCES.txt'
+[2.979s] writing manifest file 'micro_ros_msgs.egg-info/SOURCES.txt'
+[3.011s] [  7%] Built target ament_cmake_python_build_micro_ros_msgs_egg
+[3.250s] [  7%] Built target micro_ros_msgs__cpp
+[3.260s] [  9%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/node__description.c.o[0m
+[3.261s] [ 10%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/graph__description.c.o[0m
+[3.261s] [ 12%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/graph__functions.c.o[0m
+[3.261s] [ 14%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/node__type_support.c.o[0m
+[3.261s] [ 16%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/node__functions.c.o[0m
+[3.261s] [ 20%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/entity__type_support.c.o[0m
+[3.261s] [ 20%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/entity__functions.c.o[0m
+[3.261s] [ 21%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/graph__type_support.c.o[0m
+[3.261s] [ 23%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_c.dir/rosidl_generator_c/micro_ros_msgs/msg/detail/entity__description.c.o[0m
+[3.322s] [ 25%] [32m[1mLinking C shared library libmicro_ros_msgs__rosidl_generator_c.so[0m
+[3.359s] [ 25%] Built target micro_ros_msgs__rosidl_generator_c
+[3.367s] [ 27%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[3.369s] [ 30%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[3.369s] [ 30%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[3.369s] [ 32%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[3.370s] [ 34%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[3.370s] [ 36%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[3.580s] [ 40%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/micro_ros_msgs/msg/detail/graph__type_support.cpp.o[0m
+[3.580s] [ 40%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/micro_ros_msgs/msg/detail/node__type_support.cpp.o[0m
+[3.581s] [ 41%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/micro_ros_msgs/msg/detail/entity__type_support.cpp.o[0m
+[3.597s] [ 43%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/micro_ros_msgs/msg/detail/graph__type_support.c.o[0m
+[3.597s] [ 47%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/micro_ros_msgs/msg/detail/entity__type_support.c.o[0m
+[3.597s] [ 47%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/micro_ros_msgs/msg/detail/node__type_support.c.o[0m
+[3.597s] [ 49%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/micro_ros_msgs/msg/graph__type_support.cpp.o[0m
+[3.600s] [ 50%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/micro_ros_msgs/msg/node__type_support.cpp.o[0m
+[3.604s] [ 52%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/micro_ros_msgs/msg/entity__type_support.cpp.o[0m
+[3.652s] [ 54%] [32m[1mLinking C shared library libmicro_ros_msgs__rosidl_typesupport_introspection_c.so[0m
+[3.659s] [ 56%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/micro_ros_msgs/msg/node__type_support.cpp.o[0m
+[3.659s] [ 58%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/micro_ros_msgs/msg/graph__type_support.cpp.o[0m
+[3.661s] [ 60%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/micro_ros_msgs/msg/entity__type_support.cpp.o[0m
+[3.673s] [ 65%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/micro_ros_msgs/msg/detail/entity__type_support_c.cpp.o[0m
+[3.673s] [ 65%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/micro_ros_msgs/msg/detail/node__type_support_c.cpp.o[0m
+[3.673s] [ 65%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/micro_ros_msgs/msg/detail/graph__type_support_c.cpp.o[0m
+[3.684s] [ 69%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/micro_ros_msgs/msg/detail/dds_fastrtps/node__type_support.cpp.o[0m
+[3.685s] [ 69%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/micro_ros_msgs/msg/detail/dds_fastrtps/entity__type_support.cpp.o[0m
+[3.685s] [ 70%] [32mBuilding CXX object CMakeFiles/micro_ros_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/micro_ros_msgs/msg/detail/dds_fastrtps/graph__type_support.cpp.o[0m
+[3.693s] [ 70%] Built target micro_ros_msgs__rosidl_typesupport_introspection_c
+[3.712s] [ 72%] [32m[1mLinking CXX shared library libmicro_ros_msgs__rosidl_typesupport_c.so[0m
+[3.784s] [ 72%] Built target micro_ros_msgs__rosidl_typesupport_c
+[3.968s] [ 74%] [32m[1mLinking CXX shared library libmicro_ros_msgs__rosidl_typesupport_cpp.so[0m
+[4.050s] [ 74%] Built target micro_ros_msgs__rosidl_typesupport_cpp
+[4.088s] [ 76%] [32m[1mLinking CXX shared library libmicro_ros_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[4.190s] [ 76%] Built target micro_ros_msgs__rosidl_typesupport_introspection_cpp
+[4.277s] [ 78%] [32m[1mLinking CXX shared library libmicro_ros_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[4.321s] [ 80%] [32m[1mLinking CXX shared library libmicro_ros_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[4.342s] [ 80%] Built target micro_ros_msgs__rosidl_typesupport_fastrtps_c
+[4.379s] [ 80%] Built target micro_ros_msgs__rosidl_typesupport_fastrtps_cpp
+[4.399s] [ 80%] Built target micro_ros_msgs
+[4.421s] [ 81%] [34m[1mGenerating Python code for ROS interfaces[0m
+[4.984s] [ 81%] Built target micro_ros_msgs__py
+[5.000s] [ 83%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_py.dir/rosidl_generator_py/micro_ros_msgs/msg/_graph_s.c.o[0m
+[5.002s] [ 87%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_py.dir/rosidl_generator_py/micro_ros_msgs/msg/_entity_s.c.o[0m
+[5.002s] [ 87%] [32mBuilding C object CMakeFiles/micro_ros_msgs__rosidl_generator_py.dir/rosidl_generator_py/micro_ros_msgs/msg/_node_s.c.o[0m
+[5.126s] [ 89%] [32m[1mLinking C shared library libmicro_ros_msgs__rosidl_generator_py.so[0m
+[5.159s] [ 89%] Built target micro_ros_msgs__rosidl_generator_py
+[5.173s] [ 90%] [32mBuilding C object CMakeFiles/micro_ros_msgs_s__rosidl_typesupport_c.dir/rosidl_generator_py/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[5.173s] [ 92%] [32mBuilding C object CMakeFiles/micro_ros_msgs_s__rosidl_typesupport_fastrtps_c.dir/rosidl_generator_py/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[5.173s] [ 94%] [32mBuilding C object CMakeFiles/micro_ros_msgs_s__rosidl_typesupport_introspection_c.dir/rosidl_generator_py/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[5.239s] [ 96%] [32m[1mLinking C shared module rosidl_generator_py/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_introspection_c.so[0m
+[5.239s] [ 98%] [32m[1mLinking C shared module rosidl_generator_py/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_c.so[0m
+[5.243s] [100%] [32m[1mLinking C shared module rosidl_generator_py/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_fastrtps_c.so[0m
+[5.258s] [100%] Built target micro_ros_msgs_s__rosidl_typesupport_c
+[5.266s] [100%] Built target micro_ros_msgs_s__rosidl_typesupport_introspection_c
+[5.267s] [100%] Built target micro_ros_msgs_s__rosidl_typesupport_fastrtps_c
+[5.277s] Invoked command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/laura/scara_ws/microros_ws/build/micro_ros_msgs -- -j16 -l16
+[5.278s] Invoking command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/laura/scara_ws/microros_ws/build/micro_ros_msgs
+[5.286s] -- Install configuration: ""
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/ament_index/resource_index/rosidl_interfaces/micro_ros_msgs
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Graph.json
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Node.json
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Entity.json
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/node.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/entity.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/rosidl_generator_c__visibility_control.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__type_support.c
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__description.c
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__struct.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__functions.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__struct.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__type_support.h
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__functions.c
+[5.286s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__type_support.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__type_support.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__type_support.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__description.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__functions.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__functions.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__functions.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__type_support.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__functions.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__struct.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__description.c
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/graph.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/library_path.sh
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/library_path.dsv
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_generator_c.so
+[5.287s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_generator_c.so" to ""
+[5.287s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.287s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[5.287s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__rosidl_typesupport_fastrtps_c.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__rosidl_typesupport_fastrtps_c.h
+[5.287s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__rosidl_typesupport_fastrtps_c.h
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_fastrtps_c.so
+[5.288s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__rosidl_typesupport_introspection_c.h
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__type_support.c
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__type_support.c
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__type_support.c
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__rosidl_typesupport_introspection_c.h
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__rosidl_typesupport_introspection_c.h
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_introspection_c.so
+[5.288s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_introspection_c.so" to ""
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_c.so
+[5.288s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_c.so" to ""
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/node.hpp
+[5.288s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.288s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__traits.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__type_support.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__traits.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__type_support.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__builder.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__struct.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__builder.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__struct.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__traits.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__builder.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__type_support.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__struct.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/entity.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/graph.hpp
+[5.289s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.289s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[5.289s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__rosidl_typesupport_fastrtps_cpp.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__rosidl_typesupport_fastrtps_cpp.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/dds_fastrtps
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__rosidl_typesupport_fastrtps_cpp.hpp
+[5.289s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_fastrtps_cpp.so
+[5.290s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[5.290s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs
+[5.290s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg
+[5.290s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__rosidl_typesupport_introspection_cpp.hpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__type_support.cpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__type_support.cpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/graph__rosidl_typesupport_introspection_cpp.hpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/entity__type_support.cpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/include/micro_ros_msgs/micro_ros_msgs/msg/detail/node__rosidl_typesupport_introspection_cpp.hpp
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_introspection_cpp.so
+[5.290s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_cpp.so
+[5.290s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_typesupport_cpp.so" to ""
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/pythonpath.sh
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/pythonpath.dsv
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs-5.0.2-py3.12.egg-info
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs-5.0.2-py3.12.egg-info/dependency_links.txt
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs-5.0.2-py3.12.egg-info/top_level.txt
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs-5.0.2-py3.12.egg-info/SOURCES.txt
+[5.290s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs-5.0.2-py3.12.egg-info/PKG-INFO
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_introspection_c.so
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_c.c
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_fastrtps_c.so
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_c.so
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_graph.py
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_graph_s.c
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_node_s.c
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_node.py
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/__init__.py
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_entity_s.c
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_entity.py
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/__init__.py
+[5.291s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/_micro_ros_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[5.320s] Listing '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs'...
+[5.320s] Compiling '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/__init__.py'...
+[5.321s] Listing '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg'...
+[5.321s] Compiling '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/__init__.py'...
+[5.321s] Compiling '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_entity.py'...
+[5.321s] Compiling '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_graph.py'...
+[5.321s] Compiling '/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/msg/_node.py'...
+[5.324s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_fastrtps_c.so
+[5.325s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_fastrtps_c.so" to ""
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_introspection_c.so
+[5.325s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_introspection_c.so" to ""
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_c.so
+[5.325s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/python3.12/site-packages/micro_ros_msgs/micro_ros_msgs_s__rosidl_typesupport_c.so" to ""
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_generator_py.so
+[5.325s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/micro_ros_msgs/lib/libmicro_ros_msgs__rosidl_generator_py.so" to ""
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/ament_index/resource_index/rust_packages/micro_ros_msgs
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/Cargo.toml
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/build.rs
+[5.325s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/src
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/src/msg.rs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/src/lib.rs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/src/msg
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/rust/src/msg/rmw.rs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Graph.idl
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Node.idl
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Entity.idl
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Graph.msg
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Node.msg
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/msg/Entity.msg
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/ament_index/resource_index/package_run_dependencies/micro_ros_msgs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/ament_index/resource_index/parent_prefix_path/micro_ros_msgs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/ament_prefix_path.sh
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/ament_prefix_path.dsv
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/path.sh
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/environment/path.dsv
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/local_setup.bash
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/local_setup.sh
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/local_setup.zsh
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/local_setup.dsv
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/package.dsv
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/ament_index/resource_index/packages/micro_ros_msgs
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_generator_cExport.cmake
+[5.326s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_generator_cExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_introspection_cExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_cExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_generator_cppExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_cppExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_generator_pyExport.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/export_micro_ros_msgs__rosidl_generator_pyExport-noconfig.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/rosidl_cmake-extras.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[5.327s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[5.328s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[5.328s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/rosidl_cmake_aggregate_target-extras.cmake
+[5.328s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgsConfig.cmake
+[5.328s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/cmake/micro_ros_msgsConfig-version.cmake
+[5.328s] -- Installing: /home/laura/scara_ws/microros_ws/install/micro_ros_msgs/share/micro_ros_msgs/package.xml
+[5.330s] Invoked command in '/home/laura/scara_ws/microros_ws/build/micro_ros_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/laura/scara_ws/microros_ws/build/micro_ros_msgs

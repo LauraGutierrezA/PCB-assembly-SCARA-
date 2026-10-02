@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "micro_ros_msgs__rs",
+		"source" : "/home/laura/scara_ws/microros_ws/build/micro_ros_msgs/micro_ros_msgs__rs"
+	}
+}

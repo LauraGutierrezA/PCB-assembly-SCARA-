@@ -1,0 +1,349 @@
+[0.008s] Invoking command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/laura/scara_ws/microros_ws/src/uros/drive_base/drive_base_msgs -DCMAKE_INSTALL_PREFIX=/home/laura/scara_ws/microros_ws/install/drive_base_msgs
+[0.053s] -- The C compiler identification is GNU 13.3.0
+[0.097s] -- The CXX compiler identification is GNU 13.3.0
+[0.111s] -- Detecting C compiler ABI info
+[0.177s] -- Detecting C compiler ABI info - done
+[0.184s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.184s] -- Detecting C compile features
+[0.184s] -- Detecting C compile features - done
+[0.191s] -- Detecting CXX compiler ABI info
+[0.262s] -- Detecting CXX compiler ABI info - done
+[0.268s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.268s] -- Detecting CXX compile features
+[0.269s] -- Detecting CXX compile features - done
+[0.278s] -- Found ament_cmake: 2.5.6 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[0.401s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[0.529s] -- Found std_msgs: 5.3.8 (/opt/ros/jazzy/share/std_msgs/cmake)
+[0.579s] -- Found rosidl_generator_c: 4.6.9 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[0.593s] -- Found rosidl_generator_cpp: 4.6.9 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[0.616s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.631s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.667s] -- Found rosidl_default_generators: 1.6.1 (/opt/ros/jazzy/share/rosidl_default_generators/cmake)
+[0.684s] -- Found rosidl_adapter: 4.6.9 (/opt/ros/jazzy/share/rosidl_adapter/cmake)
+[1.177s] -- Found ament_cmake_cppcheck: 0.17.5 (/opt/ros/jazzy/share/ament_cmake_cppcheck/cmake)
+[1.180s] -- Found ament_cmake_cpplint: 0.17.5 (/opt/ros/jazzy/share/ament_cmake_cpplint/cmake)
+[1.183s] -- Found ament_cmake_uncrustify: 0.17.5 (/opt/ros/jazzy/share/ament_cmake_uncrustify/cmake)
+[1.185s] -- Found ament_cmake_ros: 0.12.1 (/opt/ros/jazzy/share/ament_cmake_ros/cmake)
+[1.780s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.023s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[2.027s] -- Found python_cmake_module: 0.11.1 (/opt/ros/jazzy/share/python_cmake_module/cmake)
+[2.126s] -- Found PythonExtra: /usr/bin/python3  
+[2.488s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter Development NumPy Development.Module Development.Embed 
+[2.524s] -- Found ament_cmake_flake8: 0.17.5 (/opt/ros/jazzy/share/ament_cmake_flake8/cmake)
+[2.527s] -- Found ament_cmake_pep257: 0.17.5 (/opt/ros/jazzy/share/ament_cmake_pep257/cmake)
+[2.558s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[2.564s] -- Configuring done (2.5s)
+[2.591s] -- Generating done (0.0s)
+[2.600s] -- Build files have been written to: /home/laura/scara_ws/microros_ws/build/drive_base_msgs
+[2.608s] Invoked command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/laura/scara_ws/microros_ws/src/uros/drive_base/drive_base_msgs -DCMAKE_INSTALL_PREFIX=/home/laura/scara_ws/microros_ws/install/drive_base_msgs
+[2.608s] Invoking command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/laura/scara_ws/microros_ws/build/drive_base_msgs -- -j16 -l16
+[2.656s] [  1%] [34m[1mGenerating Rust code for ROS interfaces[0m
+[2.656s] [  3%] [34m[1mGenerating type hashes for ROS interfaces[0m
+[2.663s] [  3%] Built target ament_cmake_python_copy_drive_base_msgs
+[2.903s] running egg_info
+[2.904s] creating drive_base_msgs.egg-info
+[2.927s] writing drive_base_msgs.egg-info/PKG-INFO
+[2.928s] writing dependency_links to drive_base_msgs.egg-info/dependency_links.txt
+[2.928s] writing top-level names to drive_base_msgs.egg-info/top_level.txt
+[2.928s] writing manifest file 'drive_base_msgs.egg-info/SOURCES.txt'
+[2.985s] reading manifest file 'drive_base_msgs.egg-info/SOURCES.txt'
+[2.986s] writing manifest file 'drive_base_msgs.egg-info/SOURCES.txt'
+[3.016s] [  3%] Built target ament_cmake_python_build_drive_base_msgs_egg
+[3.124s] [  3%] Built target drive_base_msgs__rosidl_generator_type_description
+[3.134s] [  4%] [34m[1mGenerating C code for ROS interfaces[0m
+[3.140s] [  6%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[3.146s] [  6%] Built target drive_base_msgs__rs
+[3.632s] [  6%] Built target drive_base_msgs__cpp
+[3.789s] [  9%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_header__type_support.c.o[0m
+[3.789s] [  9%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_header__description.c.o[0m
+[3.794s] [ 10%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_header__functions.c.o[0m
+[3.800s] [ 12%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/base_info__description.c.o[0m
+[3.803s] [ 13%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/base_info__type_support.c.o[0m
+[3.804s] [ 15%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/base_info__functions.c.o[0m
+[3.806s] [ 16%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_status__description.c.o[0m
+[3.813s] [ 18%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_status__type_support.c.o[0m
+[3.814s] [ 20%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/trv_command__functions.c.o[0m
+[3.815s] [ 21%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/trv_command__description.c.o[0m
+[3.818s] [ 23%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/command_status__functions.c.o[0m
+[3.824s] [ 24%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_c.dir/rosidl_generator_c/drive_base_msgs/msg/detail/trv_command__type_support.c.o[0m
+[3.919s] [ 26%] [32m[1mLinking C shared library libdrive_base_msgs__rosidl_generator_c.so[0m
+[3.963s] [ 26%] Built target drive_base_msgs__rosidl_generator_c
+[3.974s] [ 29%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[3.974s] [ 29%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[3.974s] [ 30%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[3.979s] [ 32%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[3.981s] [ 33%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[3.988s] [ 35%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[4.441s] [ 36%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/drive_base_msgs/msg/base_info__type_support.cpp.o[0m
+[4.441s] [ 38%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/drive_base_msgs/msg/command_header__type_support.cpp.o[0m
+[4.445s] [ 41%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/drive_base_msgs/msg/command_status__type_support.cpp.o[0m
+[4.445s] [ 41%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/drive_base_msgs/msg/trv_command__type_support.cpp.o[0m
+[4.455s] [ 44%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/drive_base_msgs/msg/detail/base_info__type_support.c.o[0m
+[4.455s] [ 44%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/drive_base_msgs/msg/detail/trv_command__type_support.c.o[0m
+[4.455s] [ 47%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/drive_base_msgs/msg/detail/command_header__type_support.c.o[0m
+[4.455s] [ 47%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/drive_base_msgs/msg/detail/command_status__type_support.c.o[0m
+[4.503s] [ 49%] [32m[1mLinking C shared library libdrive_base_msgs__rosidl_typesupport_introspection_c.so[0m
+[4.503s] [ 55%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/drive_base_msgs/msg/detail/base_info__type_support.cpp.o[0m
+[4.503s] [ 55%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/drive_base_msgs/msg/detail/command_header__type_support.cpp.o[0m
+[4.503s] [ 55%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/drive_base_msgs/msg/detail/command_status__type_support.cpp.o[0m
+[4.503s] [ 55%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/drive_base_msgs/msg/detail/trv_command__type_support.cpp.o[0m
+[4.539s] [ 55%] Built target drive_base_msgs__rosidl_typesupport_introspection_c
+[4.553s] [ 60%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/drive_base_msgs/msg/detail/dds_fastrtps/command_header__type_support.cpp.o[0m
+[4.553s] [ 60%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/drive_base_msgs/msg/detail/dds_fastrtps/trv_command__type_support.cpp.o[0m
+[4.553s] [ 60%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/drive_base_msgs/msg/detail/dds_fastrtps/base_info__type_support.cpp.o[0m
+[4.553s] [ 61%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/drive_base_msgs/msg/detail/dds_fastrtps/command_status__type_support.cpp.o[0m
+[4.561s] [ 64%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/drive_base_msgs/msg/command_header__type_support.cpp.o[0m
+[4.561s] [ 64%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/drive_base_msgs/msg/base_info__type_support.cpp.o[0m
+[4.569s] [ 66%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/drive_base_msgs/msg/command_status__type_support.cpp.o[0m
+[4.639s] [ 67%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/drive_base_msgs/msg/trv_command__type_support.cpp.o[0m
+[4.682s] [ 70%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/drive_base_msgs/msg/detail/command_header__type_support_c.cpp.o[0m
+[4.682s] [ 69%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/drive_base_msgs/msg/detail/base_info__type_support_c.cpp.o[0m
+[4.688s] [ 72%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/drive_base_msgs/msg/detail/command_status__type_support_c.cpp.o[0m
+[4.689s] [ 73%] [32m[1mLinking CXX shared library libdrive_base_msgs__rosidl_typesupport_c.so[0m
+[4.764s] [ 73%] Built target drive_base_msgs__rosidl_typesupport_c
+[4.769s] [ 75%] [32mBuilding CXX object CMakeFiles/drive_base_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/drive_base_msgs/msg/detail/trv_command__type_support_c.cpp.o[0m
+[4.819s] [ 76%] [32m[1mLinking CXX shared library libdrive_base_msgs__rosidl_typesupport_cpp.so[0m
+[4.853s] [ 76%] Built target drive_base_msgs__rosidl_typesupport_cpp
+[4.862s] [ 78%] [32m[1mLinking CXX shared library libdrive_base_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[4.919s] [ 78%] Built target drive_base_msgs__rosidl_typesupport_introspection_cpp
+[5.116s] [ 80%] [32m[1mLinking CXX shared library libdrive_base_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[5.161s] [ 80%] Built target drive_base_msgs__rosidl_typesupport_fastrtps_cpp
+[5.174s] [ 81%] [32m[1mLinking CXX shared library libdrive_base_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[5.214s] [ 81%] Built target drive_base_msgs__rosidl_typesupport_fastrtps_c
+[5.231s] [ 81%] Built target drive_base_msgs
+[5.243s] [ 83%] [34m[1mGenerating Python code for ROS interfaces[0m
+[5.916s] [ 83%] Built target drive_base_msgs__py
+[5.929s] [ 84%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_py.dir/rosidl_generator_py/drive_base_msgs/msg/_trv_command_s.c.o[0m
+[5.930s] [ 86%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_py.dir/rosidl_generator_py/drive_base_msgs/msg/_base_info_s.c.o[0m
+[5.930s] [ 87%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_py.dir/rosidl_generator_py/drive_base_msgs/msg/_command_header_s.c.o[0m
+[5.930s] [ 89%] [32mBuilding C object CMakeFiles/drive_base_msgs__rosidl_generator_py.dir/rosidl_generator_py/drive_base_msgs/msg/_command_status_s.c.o[0m
+[6.045s] [ 90%] [32m[1mLinking C shared library libdrive_base_msgs__rosidl_generator_py.so[0m
+[6.076s] [ 90%] Built target drive_base_msgs__rosidl_generator_py
+[6.091s] [ 92%] [32mBuilding C object CMakeFiles/drive_base_msgs_s__rosidl_typesupport_c.dir/rosidl_generator_py/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[6.093s] [ 93%] [32mBuilding C object CMakeFiles/drive_base_msgs_s__rosidl_typesupport_introspection_c.dir/rosidl_generator_py/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[6.093s] [ 95%] [32mBuilding C object CMakeFiles/drive_base_msgs_s__rosidl_typesupport_fastrtps_c.dir/rosidl_generator_py/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[6.167s] [ 96%] [32m[1mLinking C shared module rosidl_generator_py/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_fastrtps_c.so[0m
+[6.169s] [ 98%] [32m[1mLinking C shared module rosidl_generator_py/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_introspection_c.so[0m
+[6.174s] [100%] [32m[1mLinking C shared module rosidl_generator_py/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_c.so[0m
+[6.189s] [100%] Built target drive_base_msgs_s__rosidl_typesupport_fastrtps_c
+[6.191s] [100%] Built target drive_base_msgs_s__rosidl_typesupport_introspection_c
+[6.196s] [100%] Built target drive_base_msgs_s__rosidl_typesupport_c
+[6.206s] Invoked command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --build /home/laura/scara_ws/microros_ws/build/drive_base_msgs -- -j16 -l16
+[6.207s] Invoking command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/laura/scara_ws/microros_ws/build/drive_base_msgs
+[6.214s] -- Install configuration: ""
+[6.214s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/ament_index/resource_index/rosidl_interfaces/drive_base_msgs
+[6.214s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandHeader.json
+[6.214s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/BaseInfo.json
+[6.214s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandStatus.json
+[6.214s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/TRVCommand.json
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/base_info.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/command_header.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/rosidl_generator_c__visibility_control.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__struct.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__struct.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__type_support.c
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__functions.h
+[6.215s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__type_support.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__description.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__functions.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__functions.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__type_support.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__functions.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__functions.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__type_support.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__functions.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__description.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__functions.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__type_support.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__struct.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__description.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__struct.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__type_support.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__type_support.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__description.c
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__functions.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__type_support.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/command_status.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/trv_command.h
+[6.216s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/library_path.sh
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/library_path.dsv
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_generator_c.so
+[6.217s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_generator_c.so" to ""
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__rosidl_typesupport_fastrtps_c.h
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__rosidl_typesupport_fastrtps_c.h
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__rosidl_typesupport_fastrtps_c.h
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__rosidl_typesupport_fastrtps_c.h
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_fastrtps_c.so
+[6.217s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/trv_command.hpp
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/command_status.hpp
+[6.217s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/base_info.hpp
+[6.217s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__struct.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__struct.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__builder.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__traits.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__traits.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__traits.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__type_support.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__traits.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__builder.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__struct.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__type_support.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__builder.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__struct.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__type_support.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__builder.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__type_support.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/command_header.hpp
+[6.218s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.218s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.218s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[6.218s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__rosidl_typesupport_fastrtps_cpp.hpp
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__rosidl_typesupport_fastrtps_cpp.hpp
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/dds_fastrtps
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__rosidl_typesupport_fastrtps_cpp.hpp
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__rosidl_typesupport_fastrtps_cpp.hpp
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_fastrtps_cpp.so
+[6.219s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[6.219s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.219s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.219s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__type_support.c
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__rosidl_typesupport_introspection_c.h
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__type_support.c
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__type_support.c
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__rosidl_typesupport_introspection_c.h
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__rosidl_typesupport_introspection_c.h
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__type_support.c
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__rosidl_typesupport_introspection_c.h
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[6.219s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_introspection_c.so
+[6.219s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_introspection_c.so" to ""
+[6.220s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_c.so
+[6.220s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_c.so" to ""
+[6.220s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs
+[6.220s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg
+[6.220s] -- Up-to-date: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail
+[6.220s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__type_support.cpp
+[6.222s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__rosidl_typesupport_introspection_cpp.hpp
+[6.222s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__type_support.cpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_status__rosidl_typesupport_introspection_cpp.hpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/command_header__type_support.cpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__type_support.cpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/trv_command__rosidl_typesupport_introspection_cpp.hpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/include/drive_base_msgs/drive_base_msgs/msg/detail/base_info__rosidl_typesupport_introspection_cpp.hpp
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_introspection_cpp.so
+[6.223s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_cpp.so
+[6.223s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_typesupport_cpp.so" to ""
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/pythonpath.sh
+[6.223s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/pythonpath.dsv
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs-0.0.0-py3.12.egg-info
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs-0.0.0-py3.12.egg-info/dependency_links.txt
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs-0.0.0-py3.12.egg-info/top_level.txt
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs-0.0.0-py3.12.egg-info/SOURCES.txt
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs-0.0.0-py3.12.egg-info/PKG-INFO
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_fastrtps_c.so
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_c.c
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_introspection_c.so
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_header_s.c
+[6.224s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_header.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_status_s.c
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_status.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_base_info.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_trv_command_s.c
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/__init__.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_trv_command.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_base_info_s.c
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/__init__.py
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_c.so
+[6.225s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/_drive_base_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[6.261s] Listing '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs'...
+[6.261s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/__init__.py'...
+[6.261s] Listing '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg'...
+[6.261s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/__init__.py'...
+[6.262s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_base_info.py'...
+[6.262s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_header.py'...
+[6.262s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_command_status.py'...
+[6.262s] Compiling '/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/msg/_trv_command.py'...
+[6.266s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_fastrtps_c.so
+[6.266s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_fastrtps_c.so" to ""
+[6.266s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_introspection_c.so
+[6.266s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_introspection_c.so" to ""
+[6.266s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_c.so
+[6.266s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/python3.12/site-packages/drive_base_msgs/drive_base_msgs_s__rosidl_typesupport_c.so" to ""
+[6.266s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_generator_py.so
+[6.266s] -- Set non-toolchain portion of runtime path of "/home/laura/scara_ws/microros_ws/install/drive_base_msgs/lib/libdrive_base_msgs__rosidl_generator_py.so" to ""
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/ament_index/resource_index/rust_packages/drive_base_msgs
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/Cargo.toml
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/build.rs
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/src
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/src/msg.rs
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/src/lib.rs
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/src/msg
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/rust/src/msg/rmw.rs
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandHeader.idl
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/BaseInfo.idl
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandStatus.idl
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/TRVCommand.idl
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandHeader.msg
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/BaseInfo.msg
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/CommandStatus.msg
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/msg/TRVCommand.msg
+[6.267s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/ament_index/resource_index/package_run_dependencies/drive_base_msgs
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/ament_index/resource_index/parent_prefix_path/drive_base_msgs
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/ament_prefix_path.sh
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/ament_prefix_path.dsv
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/path.sh
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/environment/path.dsv
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/local_setup.bash
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/local_setup.sh
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/local_setup.zsh
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/local_setup.dsv
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/package.dsv
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/ament_index/resource_index/packages/drive_base_msgs
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_generator_cExport.cmake
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_generator_cExport-noconfig.cmake
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[6.268s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_generator_cppExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_introspection_cExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_cExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_cppExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_generator_pyExport.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/export_drive_base_msgs__rosidl_generator_pyExport-noconfig.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/rosidl_cmake-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[6.269s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[6.270s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/rosidl_cmake_aggregate_target-extras.cmake
+[6.270s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgsConfig.cmake
+[6.270s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/cmake/drive_base_msgsConfig-version.cmake
+[6.270s] -- Installing: /home/laura/scara_ws/microros_ws/install/drive_base_msgs/share/drive_base_msgs/package.xml
+[6.271s] Invoked command in '/home/laura/scara_ws/microros_ws/build/drive_base_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake --install /home/laura/scara_ws/microros_ws/build/drive_base_msgs

@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
 
 from . import theme
 from .homing_tab import HomingTab
+from .point_to_point_tab import PointToPointTab
 
 
 class MainWindow(QMainWindow):
@@ -31,7 +32,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.node = ros_node
         self.setWindowTitle('SCARA RRP - Estacion 3')
-        self.resize(700, 560)
+        self.resize(860, 680)
         self.setFont(theme.sans(10))
         self.setStyleSheet(theme.stylesheet())
 
@@ -69,7 +70,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _build_tabs(self):
         self.tabs.addTab(HomingTab(self.node), 'Homing')
-        # Aqui iran: 'Punto a punto', 'Jog', 'Caracterizacion', ...
+        self.tabs.addTab(PointToPointTab(self.node), 'Punto a punto')
+        # Aqui iran: 'Jog', 'Caracterizacion', ...
 
     def _build_header(self):
         header = QWidget()

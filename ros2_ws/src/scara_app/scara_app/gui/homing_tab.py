@@ -8,17 +8,10 @@ Reglas de los botones:
   - RESUME solo con el ESP32 conectado y si el homing esta detenido
     (ABORTED) o nunca se ha corrido (IDLE).
 """
-import html
-from datetime import datetime
-
-from PyQt5.QtGui import QTextBlockFormat, QTextCursor
-from PyQt5.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget,
-)
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from . import theme
-
-MAX_LOG_LINES = 500
+from .widgets import LogView, button
 
 
 class HomingTab(QWidget):
@@ -27,9 +20,9 @@ class HomingTab(QWidget):
         self.node = ros_node
 
         # ---------- Botones ----------
-        self.btn_start = self._make_button('Start', 'primary', 'Homing desde el motor 1')
-        self.btn_resume = self._make_button('Resume', 'secondary', 'Continuar donde quedo')
-        self.btn_stop = self._make_button('Stop', 'danger', 'Detener todo (Esc)')
+        self.btn_start = button('Start', 'primary', 'Homing desde el motor 1')
+        self.btn_resume = button('Resume', 'secondary', 'Continuar donde quedo')
+        self.btn_stop = button('Stop', 'danger', 'Detener todo (Esc)')
 
         self.btn_start.clicked.connect(lambda: self.node.send_command('start'))
         self.btn_resume.clicked.connect(lambda: self.node.send_command('resume'))
@@ -42,35 +35,14 @@ class HomingTab(QWidget):
         buttons.addWidget(self.btn_stop)
         buttons.addStretch()
 
-        # ---------- Encabezado del historial ----------
-        caps = QLabel('HISTORIAL')
-        caps.setObjectName('capsLabel')
-        caps.setFont(theme.caps_label_font(7))
-        btn_clear = QPushButton('Limpiar historial')
-        btn_clear.setObjectName('textButton')
-        btn_clear.clicked.connect(self._clear_log)
-
-        log_header = QHBoxLayout()
-        log_header.addWidget(caps)
-        log_header.addStretch()
-        log_header.addWidget(btn_clear)
-
         # ---------- Historial ----------
-        self.log = QTextEdit()
-        self.log.setObjectName('log')
-        self.log.setReadOnly(True)
-        self.log.setFont(theme.mono(10))
-        self.log.document().setMaximumBlockCount(MAX_LOG_LINES)
-        self._log_empty = True
+        self.log = LogView('Historial')
 
-        # ---------- Layout ----------
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(0)
         layout.addLayout(buttons)
         layout.addSpacing(28)
-        layout.addLayout(log_header)
-        layout.addSpacing(10)
         layout.addWidget(self.log)
 
         # ---------- Senales del nodo ----------
@@ -79,43 +51,14 @@ class HomingTab(QWidget):
         self._update_buttons()
 
     # ------------------------------------------------------------------
-    @staticmethod
-    def _make_button(text, role, tooltip):
-        b = QPushButton(text)
-        b.setObjectName(role)
-        b.setToolTip(tooltip)
-        b.setMinimumWidth(94)
-        return b
-
-    def _append_log(self, text, color):
-        stamp = datetime.now().strftime('%H:%M:%S')
-        line = (f'<span style="color:{theme.TEXT_MUTED};">{stamp}</span>'
-                f'&nbsp;&nbsp;<span style="color:{color};">{html.escape(text)}</span>')
-
-        cursor = self.log.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        if not self._log_empty:
-            cursor.insertBlock()
-        cursor.insertHtml(line)
-        fmt = QTextBlockFormat()
-        fmt.setLineHeight(160, QTextBlockFormat.ProportionalHeight)
-        cursor.mergeBlockFormat(fmt)
-        self._log_empty = False
-        self.log.setTextCursor(cursor)
-        self.log.ensureCursorVisible()
-
-    def _clear_log(self):
-        self.log.clear()
-        self._log_empty = True
-
     def _on_status_changed(self, status):
         color = theme.DANGER if status.startswith('ABORTED') else theme.TEXT
-        self._append_log(status, color)
+        self.log.append(status, color)
         self._update_buttons()
 
     def _on_connection_changed(self, connected):
         text = '--- ESP32 conectado ---' if connected else '--- ESP32 sin conexion ---'
-        self._append_log(text, theme.TEXT_MUTED)
+        self.log.append(text, theme.TEXT_MUTED)
         self._update_buttons()
 
     def _update_buttons(self):
