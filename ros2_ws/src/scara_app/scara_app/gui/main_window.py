@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (
 from . import theme
 from .homing_tab import HomingTab
 from .point_to_point_tab import PointToPointTab
+from .circuit_test_tab import CircuitTestTab
 
 
 class MainWindow(QMainWindow):
@@ -71,6 +72,7 @@ class MainWindow(QMainWindow):
     def _build_tabs(self):
         self.tabs.addTab(HomingTab(self.node), 'Homing')
         self.tabs.addTab(PointToPointTab(self.node), 'Punto a punto')
+        self.tabs.addTab(CircuitTestTab(self.node), 'Prueba de circuito')
         # Aqui iran: 'Jog', 'Caracterizacion', ...
 
     def _build_header(self):

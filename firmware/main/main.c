@@ -32,6 +32,14 @@
  *                  "ERR x=500.0 y=0.0 z=0.0 reason=OUT_OF_REACH homed=1"
  *                  th1, th2 en grados; th3 en radianes (angulo del motor del tornillo).
  *
+ *   Prueba de circuito (pestana "Prueba de circuito" de la interfaz):
+ *   /scara/test_cmd (std_msgs/String, PC -> ESP32):
+ *                  "run <motor 1-3> <L|R> <velocidad %> <segundos>"
+ *                  "stop <motor 1-3>"  |  "stop all"
+ *   /scara/limits   (std_msgs/String, ESP32 -> PC): estado de end-stops y motores,
+ *                  "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0"
+ *                  Se publica al cambiar y cada 1 s.
+ *
  * Transporte: UART0 (GPIO1 TX / GPIO3 RX) a 115200. En menuconfig:
  *   micro-ROS Settings -> UART TXD = 1, RXD = 3; consola -> None.
  */
@@ -59,6 +67,7 @@
 #include "homing.h"
 #include "ik.h"
 #include "control.h"
+#include "motor_test.h"
 
 /* ---------------- Parametros ---------------- */
 #define CONTROL_PERIOD_MS     10
@@ -69,6 +78,8 @@
 #define STATUS_BUF_LEN        48
 #define IK_BUF_LEN            160
 #define TARGET_LEN            11      /* x y z d1 d2 d3 d4 d5 d6 av codo */
+#define TEST_BUF_LEN          48
+#define LIMITS_BUF_LEN        80
 
 /* Si algo falla al crear entidades, devuelve false (no mata la tarea) */
 #define RCRETURN(fn) { rcl_ret_t rc_ = (fn); if (rc_ != RCL_RET_OK) { return false; } }
@@ -83,6 +94,7 @@ static void control_task(void *arg)
     for (;;) {
         homing_update();
         control_update();
+        motor_test_update();
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 }
@@ -109,6 +121,16 @@ static std_msgs__msg__Float32MultiArray target_msg;
 static float target_buf[TARGET_LEN];
 static std_msgs__msg__String ik_msg;
 static char ik_buf[IK_BUF_LEN];
+
+/* Prueba de circuito */
+static rcl_subscription_t test_sub;
+static rcl_publisher_t    limits_pub;
+static std_msgs__msg__String test_msg;
+static std_msgs__msg__String limits_msg;
+static char test_buf[TEST_BUF_LEN];
+static char limits_buf[LIMITS_BUF_LEN];
+static char limits_last[LIMITS_BUF_LEN];
+static TickType_t limits_last_pub = 0;
 
 static uint32_t   last_seq = UINT32_MAX;
 static TickType_t last_pub = 0;
@@ -172,10 +194,65 @@ static void target_callback(const void *msgin)
     RCSOFT(rcl_publish(&ik_pub, &ik_msg, NULL));
 }
 
+/* ---------------- Prueba de circuito ---------------- */
+
+/* "run 2 L 45 1.5" | "stop 2" | "stop all" */
+static void test_cmd_callback(const void *msgin)
+{
+    const std_msgs__msg__String *m = (const std_msgs__msg__String *)msgin;
+    char line[TEST_BUF_LEN];
+    size_t n = m->data.size < sizeof(line) - 1 ? m->data.size : sizeof(line) - 1;
+    memcpy(line, m->data.data, n);
+    line[n] = '\0';
+
+    int motor;
+    char dir;
+    float pct, secs;
+    if (sscanf(line, "run %d %c %f %f", &motor, &dir, &pct, &secs) == 4) {
+        if (motor < 1 || motor > NUM_MOTORS || secs <= 0.0f) return;
+        if (pct < 0.0f) pct = 0.0f;
+        if (pct > 100.0f) pct = 100.0f;
+        motor_test_request_run(motor - 1,
+                               (dir == 'R' || dir == 'r') ? MT_DIR_R : MT_DIR_L,
+                               (uint32_t)(pct * 1023.0f / 100.0f + 0.5f),
+                               (uint32_t)(secs * 1000.0f));
+    } else if (strcmp(line, "stop all") == 0) {
+        motor_test_request_stop(-1);
+    } else if (sscanf(line, "stop %d", &motor) == 1) {
+        if (motor >= 1 && motor <= NUM_MOTORS) motor_test_request_stop(motor - 1);
+    }
+}
+
+/* Se llama cada 100 ms desde status_timer_cb: publica end-stops y motores
+ * cuando cambian, y cada 1 s aunque no cambien. */
+static void limits_publish_tick(void)
+{
+    snprintf(limits_buf, sizeof(limits_buf),
+             "L1=%d R1=%d L2=%d R2=%d L3=%d R3=%d M1=%d M2=%d M3=%d",
+             limit_l_pressed(0), limit_r_pressed(0),
+             limit_l_pressed(1), limit_r_pressed(1),
+             limit_l_pressed(2), limit_r_pressed(2),
+             motor_test_is_running(0), motor_test_is_running(1), motor_test_is_running(2));
+
+    TickType_t now = xTaskGetTickCount();
+    if (strcmp(limits_buf, limits_last) == 0 &&
+        (now - limits_last_pub) < pdMS_TO_TICKS(HEARTBEAT_MS)) {
+        return;
+    }
+    limits_msg.data.data = limits_buf;
+    limits_msg.data.size = strlen(limits_buf);
+    limits_msg.data.capacity = sizeof(limits_buf);
+    RCSOFT(rcl_publish(&limits_pub, &limits_msg, NULL));
+    strcpy(limits_last, limits_buf);
+    limits_last_pub = now;
+}
+
 static void status_timer_cb(rcl_timer_t *timer, int64_t last_call_time)
 {
     (void)last_call_time;
     if (timer == NULL) return;
+
+    limits_publish_tick();   /* prueba de circuito */
 
     uint32_t s = homing_status_seq();
     TickType_t now = xTaskGetTickCount();
@@ -206,6 +283,10 @@ static bool create_entities(void)
         &status_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/status"));
     RCRETURN(rclc_publisher_init_default(
         &ik_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/ik"));
+    RCRETURN(rclc_subscription_init_default(
+        &test_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/test_cmd"));
+    RCRETURN(rclc_publisher_init_default(
+        &limits_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/limits"));
     RCRETURN(rclc_timer_init_default2(
         &status_timer, &support, RCL_MS_TO_NS(STATUS_PERIOD_MS), status_timer_cb, true));
 
@@ -213,6 +294,11 @@ static bool create_entities(void)
     cmd_msg.data.data = cmd_buf;
     cmd_msg.data.size = 0;
     cmd_msg.data.capacity = sizeof(cmd_buf);
+
+    test_msg.data.data = test_buf;
+    test_msg.data.size = 0;
+    test_msg.data.capacity = sizeof(test_buf);
+    limits_last[0] = '\0';   /* forzar publicacion de end-stops al conectar */
 
     /* Float32MultiArray: memoria fija para los 11 valores y sin dimensiones
      * en el layout (desde Python se envia sin layout). */
@@ -225,11 +311,13 @@ static bool create_entities(void)
     target_msg.layout.data_offset = 0;
 
     executor = rclc_executor_get_zero_initialized_executor();
-    RCRETURN(rclc_executor_init(&executor, &support.context, 3, &allocator));
+    RCRETURN(rclc_executor_init(&executor, &support.context, 4, &allocator));
     RCRETURN(rclc_executor_add_subscription(&executor, &cmd_sub, &cmd_msg,
                                             &cmd_callback, ON_NEW_DATA));
     RCRETURN(rclc_executor_add_subscription(&executor, &target_sub, &target_msg,
                                             &target_callback, ON_NEW_DATA));
+    RCRETURN(rclc_executor_add_subscription(&executor, &test_sub, &test_msg,
+                                            &test_cmd_callback, ON_NEW_DATA));
     RCRETURN(rclc_executor_add_timer(&executor, &status_timer));
 
     last_seq = UINT32_MAX;   /* forzar publicacion inmediata al conectar */

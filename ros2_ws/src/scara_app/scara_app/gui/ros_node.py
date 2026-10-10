@@ -12,6 +12,8 @@ Topicos:
   /scara/target  (std_msgs/Float32MultiArray)  PC -> ESP32
                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]  (mm, av en mm/vuelta, codo +1/-1)
   /scara/ik      (std_msgs/String)  ESP32 -> PC   resultado de la IK (ver parse_ik)
+  /scara/test_cmd (std_msgs/String) PC -> ESP32   prueba de circuito: "run 1 L 45 1.0" | "stop 1" | "stop all"
+  /scara/limits  (std_msgs/String)  ESP32 -> PC   "L1=0 R1=1 ... M1=0 M2=1 M3=0" (ver parse_limits)
 """
 import time
 
@@ -50,12 +52,23 @@ def parse_ik(text: str) -> dict:
     return result
 
 
+def parse_limits(text: str) -> dict:
+    """ "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0" -> {'L1': False, 'R1': True, ...} """
+    out = {}
+    for token in text.split():
+        if '=' in token:
+            key, value = token.split('=', 1)
+            out[key] = value.strip() == '1'
+    return out
+
+
 class RosSignals(QObject):
     """Senales de Qt que emite el nodo hacia la interfaz."""
     status_received = pyqtSignal(str)        # cada mensaje de /scara/status
     status_changed = pyqtSignal(str)         # solo cuando el texto cambia
     connection_changed = pyqtSignal(bool)    # True = ESP32 respondiendo
     ik_result = pyqtSignal(dict)             # cada mensaje de /scara/ik (ya interpretado)
+    limits_received = pyqtSignal(dict)       # cada mensaje de /scara/limits (ya interpretado)
 
 
 class ScaraGuiNode(Node):
@@ -67,6 +80,9 @@ class ScaraGuiNode(Node):
         self._target_pub = self.create_publisher(Float32MultiArray, 'scara/target', 10)
         self.create_subscription(String, 'scara/status', self._on_status, 10)
         self.create_subscription(String, 'scara/ik', self._on_ik, 10)
+        # Prueba de circuito
+        self._test_pub = self.create_publisher(String, 'scara/test_cmd', 10)
+        self.create_subscription(String, 'scara/limits', self._on_limits, 10)
 
         self._last_status = None
         self._last_status_time = 0.0
@@ -92,6 +108,20 @@ class ScaraGuiNode(Node):
         self._target_pub.publish(msg)
         self.get_logger().info(f'Consigna enviada: x={x:.1f} y={y:.1f} z={z:.1f} codo={codo:+d}')
 
+    def test_run(self, motor: int, direction: str, speed_pct: float, seconds: float):
+        """Prueba de circuito: mueve 'motor' (1-3) hacia 'L' o 'R'."""
+        self._send_test(f'run {motor} {direction} {speed_pct:.0f} {seconds:.2f}')
+
+    def test_stop(self, motor=None):
+        """Prueba de circuito: detiene un motor (1-3) o todos (None)."""
+        self._send_test('stop all' if motor is None else f'stop {motor}')
+
+    def _send_test(self, text: str):
+        msg = String()
+        msg.data = text
+        self._test_pub.publish(msg)
+        self.get_logger().info(f'Prueba: {text}')
+
     # ---------------- Callbacks internos ----------------
     def _on_status(self, msg: String):
         self._last_status_time = time.monotonic()
@@ -106,6 +136,9 @@ class ScaraGuiNode(Node):
 
     def _on_ik(self, msg: String):
         self.signals.ik_result.emit(parse_ik(msg.data))
+
+    def _on_limits(self, msg: String):
+        self.signals.limits_received.emit(parse_limits(msg.data))
 
     def _check_connection(self):
         alive = (time.monotonic() - self._last_status_time) < CONNECTION_TIMEOUT_S

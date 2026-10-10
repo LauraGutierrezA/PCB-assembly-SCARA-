@@ -31,38 +31,38 @@
  *   - STBY de los TB6612 va soldado a ALTO en la PCB (no usa GPIO).
  */
 #ifndef PINS_H
-#define PINS_H
+    #define PINS_H
 
-/* ---------- Finales de carrera (entradas, activos en alto) ---------- */
-#define PIN_LS_L1     36
-#define PIN_LS_R1     39
-#define PIN_LS_L2     34
-#define PIN_LS_R2     35
-#define PIN_LS_L3     32
-#define PIN_LS_R3     33
+    /* ---------- Finales de carrera ---------- */
+    #define PIN_LS_L1     15
+    #define PIN_LS_R1     2
+    #define PIN_LS_L2     4
+    #define PIN_LS_R2     16
+    #define PIN_LS_L3     17
+    #define PIN_LS_R3     5
 
-/* ---------- Direccion de los drivers TB6612 (salidas) ---------- */
-#define PIN_M1_IN1    25
-#define PIN_M1_IN2    26
-#define PIN_M2_IN1    27
-#define PIN_M2_IN2    14
-#define PIN_M3_IN1    12
-#define PIN_M3_IN2    13
+    /* ---------- Direccion (enables) ---------- */
+    #define PIN_M1_IN1    25
+    #define PIN_M1_IN2    18
+    #define PIN_M2_IN1    19
+    #define PIN_M2_IN2    21
+    #define PIN_M3_IN1    22
+    #define PIN_M3_IN2    23
 
-/* ---------- PWM de los drivers (salidas) ---------- */
-#define PIN_M1_PWM    4
-#define PIN_M2_PWM    2
-#define PIN_M3_PWM    15
+    /* ---------- PWM ---------- */
+    #define PIN_M1_PWM    12
+    #define PIN_M2_PWM    14
+    #define PIN_M3_PWM    27
 
-/* ---------- Encoders en cuadratura (entradas) ---------- */
-#define PIN_ENC1_A    21
-#define PIN_ENC1_B    19
-#define PIN_ENC2_A    18
-#define PIN_ENC2_B    5
-#define PIN_ENC3_A    17
-#define PIN_ENC3_B    16
+    /* ---------- Encoders ---------- */
+    #define PIN_ENC1_A    36
+    #define PIN_ENC1_B    39
+    #define PIN_ENC2_A    34
+    #define PIN_ENC2_B    35
+    #define PIN_ENC3_A    32
+    #define PIN_ENC3_B    33
 
-/* ---------- Seguridad ---------- */
-#define PIN_DEADMAN   23   /* entrada del teach pendant (aun sin usar) */
+    /* ---------- Seguridad ---------- */
+    #define PIN_DEADMAN   26    /* el 23 ahora es M3_IN2 */
 
 #endif /* PINS_H */
