@@ -12,6 +12,8 @@ static joints_t ref = { 0.0f, 0.0f, 0.0f };
 static bool     has_ref = false;
 static volatile uint32_t ref_seq = 0;
 
+
+// Recibe los tres valores y los guarda en un lugar donde el código que mueve los motores pueda leerlos.
 void control_set_reference(const joints_t *r)
 {
     portENTER_CRITICAL(&ref_lock);
@@ -20,6 +22,7 @@ void control_set_reference(const joints_t *r)
     ref_seq++;
     portEXIT_CRITICAL(&ref_lock);
 }
+
 
 bool control_get_reference(joints_t *r)
 {
