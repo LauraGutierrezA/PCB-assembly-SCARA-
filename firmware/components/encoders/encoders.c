@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "driver/pulse_cnt.h"
+#include "driver/gpio.h"
 
 #define NUM_ENC         3
 #define PCNT_LIMIT      30000     /* el contador del hardware es de 16 bits; */
@@ -42,10 +43,14 @@ static void init_one(int i)
     pcnt_channel_handle_t cha;
     ESP_ERROR_CHECK(pcnt_new_channel(unit[i], &cha_cfg, &cha));
 
+
     /* Canal B: cuenta flancos de B, mirando el nivel de A */
     pcnt_chan_config_t chb_cfg = { .edge_gpio_num = PIN_B[i], .level_gpio_num = PIN_A[i] };
     pcnt_channel_handle_t chb;
     ESP_ERROR_CHECK(pcnt_new_channel(unit[i], &chb_cfg, &chb));
+    
+    gpio_pullup_dis(PIN_A[i]);
+    gpio_pullup_dis(PIN_B[i]);
 
     ESP_ERROR_CHECK(pcnt_channel_set_edge_action(cha,
         PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
