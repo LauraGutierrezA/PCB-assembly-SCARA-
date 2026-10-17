@@ -6,12 +6,15 @@
  *   components/motors     -> PWM, direccion y finales de carrera
  *   components/homing     -> maquina de estados del homing
  *   components/kinematics -> cinematica directa e inversa (ik.c)
- *   components/control    -> referencias articulares y lazo de control
+ *   components/encoders   -> lectura de los 3 encoders (PCNT, x4)
+ *   components/control    -> referencias articulares y lazo de control (3 PD)
  * Los parametros del robot (d1..d6, av) llegan desde la interfaz con cada
  * consigna.
  *
  * Dos tareas:
- *   - control_task   (nucleo 1, cada 10 ms): homing y, mas adelante, PID + IK.
+ *   - control_task   (nucleo 1, cada CONTROL_LOOP_MS = 8 ms): homing, prueba
+ *                    de circuito y control. El controlador de cada motor
+ *                    corre cada CONTROL_TS_MS = 32 ms (Ts del diseno).
  *                    No depende de micro-ROS: si la USB se cae, sigue corriendo.
  *   - micro_ros_task (nucleo 0): comunicacion con ROS 2. Espera al agente
  *                    solo (no hay que presionar EN). Si el agente se pierde,
@@ -36,9 +39,12 @@
  *   /scara/test_cmd (std_msgs/String, PC -> ESP32):
  *                  "run <motor 1-3> <L|R> <velocidad %> <segundos>"
  *                  "stop <motor 1-3>"  |  "stop all"
- *   /scara/limits   (std_msgs/String, ESP32 -> PC): estado de end-stops y motores,
- *                  "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0"
- *                  Se publica al cambiar y cada 1 s.
+ *   /scara/limits   (std_msgs/String, ESP32 -> PC): end-stops, motores y encoders,
+ *                  "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0
+ *                   E1=1234 E2=-56 E3=0 Q1=12.3 Q2=-0.5 Q3=0.0"
+ *                  E = cuentas del encoder, Q = angulo de la articulacion [grados]
+ *                  (Q3 = angulo del motor del tornillo). Se publica al cambiar
+ *                  (revisado cada 100 ms) y cada 1 s.
  *
  * Transporte: UART0 (GPIO1 TX / GPIO3 RX) a 115200. En menuconfig:
  *   micro-ROS Settings -> UART TXD = 1, RXD = 3; consola -> None.
@@ -67,10 +73,10 @@
 #include "homing.h"
 #include "ik.h"
 #include "control.h"
+#include "encoders.h"
 #include "motor_test.h"
 
 /* ---------------- Parametros ---------------- */
-#define CONTROL_PERIOD_MS     10
 #define STATUS_PERIOD_MS      100     /* cada cuanto se revisa si publicar */
 #define HEARTBEAT_MS          1000    /* publicar aunque no haya cambios */
 #define AGENT_CHECK_MS        1000    /* cada cuanto verificar el agente */
@@ -79,7 +85,13 @@
 #define IK_BUF_LEN            160
 #define TARGET_LEN            11      /* x y z d1 d2 d3 d4 d5 d6 av codo */
 #define TEST_BUF_LEN          48
-#define LIMITS_BUF_LEN        80
+#define LIMITS_BUF_LEN        200
+
+/* El periodo de control (8 ms) necesita ticks de 1 ms: CONFIG_FREERTOS_HZ=1000
+ * (menuconfig -> Component config -> FreeRTOS -> Kernel -> configTICK_RATE_HZ). */
+#if ((CONTROL_LOOP_MS * configTICK_RATE_HZ) % 1000) != 0
+#error "CONTROL_LOOP_MS no es multiplo del tick de FreeRTOS: poner CONFIG_FREERTOS_HZ=1000"
+#endif
 
 /* Si algo falla al crear entidades, devuelve false (no mata la tarea) */
 #define RCRETURN(fn) { rcl_ret_t rc_ = (fn); if (rc_ != RCL_RET_OK) { return false; } }
@@ -95,7 +107,7 @@ static void control_task(void *arg)
         homing_update();
         control_update();
         motor_test_update();
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_LOOP_MS));
     }
 }
 
@@ -156,7 +168,7 @@ static void cmd_callback(const void *msgin)
 }
 
 /* Consigna cartesiana + parametros del robot -> IK -> referencias de control.
- * El control todavia esta vacio: solo guarda las referencias. */
+ * control_update() (nucleo 1) se encarga de llevar los motores ahi. */
 static void target_callback(const void *msgin)
 {
     const std_msgs__msg__Float32MultiArray *m =
@@ -223,16 +235,21 @@ static void test_cmd_callback(const void *msgin)
     }
 }
 
-/* Se llama cada 100 ms desde status_timer_cb: publica end-stops y motores
- * cuando cambian, y cada 1 s aunque no cambien. */
+/* Se llama cada 100 ms desde status_timer_cb: publica end-stops, motores y
+ * encoders cuando cambian, y cada 1 s aunque no cambien. */
 static void limits_publish_tick(void)
 {
+    joints_t q;
+    control_get_position(&q);
     snprintf(limits_buf, sizeof(limits_buf),
-             "L1=%d R1=%d L2=%d R2=%d L3=%d R3=%d M1=%d M2=%d M3=%d",
+             "L1=%d R1=%d L2=%d R2=%d L3=%d R3=%d M1=%d M2=%d M3=%d "
+             "E1=%ld E2=%ld E3=%ld Q1=%.1f Q2=%.1f Q3=%.1f",
              limit_l_pressed(0), limit_r_pressed(0),
              limit_l_pressed(1), limit_r_pressed(1),
              limit_l_pressed(2), limit_r_pressed(2),
-             motor_test_is_running(0), motor_test_is_running(1), motor_test_is_running(2));
+             motor_test_is_running(0), motor_test_is_running(1), motor_test_is_running(2),
+             (long)encoder_get_count(0), (long)encoder_get_count(1), (long)encoder_get_count(2),
+             q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3 * 57.2957795f);
 
     TickType_t now = xTaskGetTickCount();
     if (strcmp(limits_buf, limits_last) == 0 &&
@@ -381,6 +398,7 @@ static size_t uart_port = UART_NUM_0;
 void app_main(void)
 {
     motors_init();
+    encoders_init();
 
 #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
     rmw_uros_set_custom_transport(

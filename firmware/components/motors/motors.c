@@ -16,8 +16,8 @@
 /* { pwm, in1, in2, final L, final R, canal, backoff_ms, homing_speed } */
 motor_config_t motors[NUM_MOTORS] = {
     {PIN_M1_PWM, PIN_M1_IN1, PIN_M1_IN2, PIN_LS_L1, PIN_LS_R1, LEDC_CHANNEL_0, 2000, 200},
-    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, PIN_LS_R2, LEDC_CHANNEL_1,  950, 512},
-    {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_L3, PIN_LS_R3, LEDC_CHANNEL_2, 3000, 430},
+    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, -1, LEDC_CHANNEL_1,  950, 512},
+    {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_UP, PIN_LS_DOWN, LEDC_CHANNEL_2, 3000, 430},
 };
 
 /* Configura un final de carrera. Los GPIO 34-39 no tienen pull interno

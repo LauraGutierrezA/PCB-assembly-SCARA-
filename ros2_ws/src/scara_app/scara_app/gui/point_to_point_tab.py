@@ -24,10 +24,10 @@ RESPONSE_TIMEOUT_MS = 1500
 # Parametros del robot (modelo DH de MATLAB), en mm; av en mm/vuelta.
 # PROVISIONALES: el robot se esta modificando; actualizar con los definitivos.
 ROBOT_DEFAULTS = [
-    ('d1', 225.0), ('d2', 175.0), ('d3', 163.6), ('d4', 0.0),
-    ('d5', -50.0), ('d6', 73.0), ('av', 20.0),
+    ('d1', 120.0), ('d2', 85.0), ('d3', 172.0), ('d4', 60.0),
+    ('d5', 30.0), ('d6', 62.5), ('av', 2.0),
 ]
-TARGET_DEFAULTS = [('X', 300.0), ('Y', 150.0), ('Z', 0.0)]
+TARGET_DEFAULTS = [('X', 0.0), ('Y', 0.0), ('Z', 0.0)]
 
 REASONS = {
     'OUT_OF_REACH': 'fuera del alcance en XY',

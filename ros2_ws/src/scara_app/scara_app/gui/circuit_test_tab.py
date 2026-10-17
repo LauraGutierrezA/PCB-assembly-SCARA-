@@ -4,14 +4,16 @@ circuit_test_tab.py - Pestana "Prueba de circuito".
 Un modulo por motor, para probar cada parte del circuito por separado:
   1. End-stops: dos circulos (L y R) que se encienden al presionar el final
      de carrera. Funcionan aunque el motor este apagado.
-  2. Accionamiento: sentido (-> L / -> R), velocidad (%), duracion (s),
+  2. Encoder: cuentas del encoder y angulo de la articulacion (grados).
+     Al mover el motor hacia L, las cuentas deben SUBIR.
+  3. Accionamiento: sentido (-> L / -> R), velocidad (%), duracion (s),
      Start y Stop. El motor gira el tiempo indicado y se detiene solo.
      NO se detiene al tocar un end-stop (la prueba es aislada).
 
 Mientras el homing esta corriendo, los Start se deshabilitan (el homing
 tiene prioridad sobre los motores). Stop siempre funciona.
 
-Topicos: /scara/test_cmd (ordenes) y /scara/limits (end-stops y motores).
+Topicos: /scara/test_cmd (ordenes) y /scara/limits (end-stops, motores y encoders).
 """
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -82,7 +84,19 @@ class MotorModule(QFrame):
         leds.addWidget(self.led_r)
         leds.addStretch()
 
-        # ---------- 2. Accionamiento ----------
+        # ---------- 2. Encoder ----------
+        self.enc_counts = QLabel('—')
+        self.enc_counts.setFont(theme.mono(16, bold=True))
+        self.enc_counts.setStyleSheet(f'color:{theme.TEXT_STRONG};')
+        self.enc_angle = QLabel('—')
+        self.enc_angle.setFont(theme.mono(10))
+        self.enc_angle.setStyleSheet(f'color:{theme.TEXT_MUTED};')
+        enc_row = QHBoxLayout()
+        enc_row.addWidget(self.enc_counts)
+        enc_row.addStretch()
+        enc_row.addWidget(self.enc_angle)
+
+        # ---------- 3. Accionamiento ----------
         self.direction = SegmentedToggle([('→ L', 'L'), ('→ R', 'R')], default=0)
 
         self.speed = QSlider(Qt.Horizontal)
@@ -139,6 +153,12 @@ class MotorModule(QFrame):
         lay.addSpacing(18)
         lay.addWidget(self._divider())
         lay.addSpacing(14)
+        lay.addWidget(caps_label('Encoder'))
+        lay.addSpacing(8)
+        lay.addLayout(enc_row)
+        lay.addSpacing(18)
+        lay.addWidget(self._divider())
+        lay.addSpacing(14)
         lay.addWidget(caps_label('Accionamiento'))
         lay.addSpacing(10)
         lay.addWidget(self._small('Sentido'))
@@ -180,6 +200,11 @@ class MotorModule(QFrame):
     def set_end_stops(self, left, right):
         self.led_l.set_state(left)
         self.led_r.set_state(right)
+
+    def set_encoder(self, counts, angle_deg):
+        """counts: int o None (sin datos). angle_deg: float o None."""
+        self.enc_counts.setText('—' if counts is None else f'{counts} cts')
+        self.enc_angle.setText('—' if angle_deg is None else f'{angle_deg:.1f}°')
 
     def set_running(self, running):
         if running:
@@ -232,12 +257,14 @@ class CircuitTestTab(QWidget):
         for m, module in self.modules.items():
             module.set_end_stops(d.get(f'L{m}'), d.get(f'R{m}'))
             module.set_running(bool(d.get(f'M{m}')))
+            module.set_encoder(d.get(f'E{m}'), d.get(f'Q{m}'))
 
     def _on_connection(self, connected):
         if not connected:
             for module in self.modules.values():
                 module.set_end_stops(None, None)
                 module.set_running(False)
+                module.set_encoder(None, None)
         self._update_enabled()
 
     def _update_enabled(self):

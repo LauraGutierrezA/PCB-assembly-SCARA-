@@ -13,7 +13,8 @@ Topicos:
                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]  (mm, av en mm/vuelta, codo +1/-1)
   /scara/ik      (std_msgs/String)  ESP32 -> PC   resultado de la IK (ver parse_ik)
   /scara/test_cmd (std_msgs/String) PC -> ESP32   prueba de circuito: "run 1 L 45 1.0" | "stop 1" | "stop all"
-  /scara/limits  (std_msgs/String)  ESP32 -> PC   "L1=0 R1=1 ... M1=0 M2=1 M3=0" (ver parse_limits)
+  /scara/limits  (std_msgs/String)  ESP32 -> PC   "L1=0 R1=1 ... M1=0 M2=1 M3=0 E1=1234 ... Q1=12.3 ..."
+                 (ver parse_limits)
 """
 import time
 
@@ -53,12 +54,28 @@ def parse_ik(text: str) -> dict:
 
 
 def parse_limits(text: str) -> dict:
-    """ "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0" -> {'L1': False, 'R1': True, ...} """
+    """
+    "L1=0 R1=1 ... M1=0 M2=1 M3=0 E1=1234 E2=-56 E3=0 Q1=12.3 Q2=-0.5 Q3=0.0"
+      -> {'L1': False, 'R1': True, ..., 'E1': 1234, ..., 'Q1': 12.3, ...}
+    L/R/M -> True/False (end-stops y motores)
+    E     -> int   (cuentas del encoder)
+    Q     -> float (angulo de la articulacion, grados)
+    """
     out = {}
     for token in text.split():
-        if '=' in token:
-            key, value = token.split('=', 1)
-            out[key] = value.strip() == '1'
+        if '=' not in token:
+            continue
+        key, value = token.split('=', 1)
+        value = value.strip()
+        try:
+            if key.startswith('E'):
+                out[key] = int(value)
+            elif key.startswith('Q'):
+                out[key] = float(value)
+            else:
+                out[key] = value == '1'
+        except ValueError:
+            pass   # dato malo: se ignora ese campo
     return out
 
 
