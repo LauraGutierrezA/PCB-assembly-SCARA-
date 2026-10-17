@@ -1,6 +1,14 @@
-ros2_ws/build/
-ros2_ws/install/
-ros2_ws/log/
-firmware/build/
+# colcon: build/, install/ y log/ en CUALQUIER carpeta
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# ESP-IDF
 firmware/managed_components/
+firmware/sdkconfig
 firmware/sdkconfig.old
+firmware/dependencies.lock

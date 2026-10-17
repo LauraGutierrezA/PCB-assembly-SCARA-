@@ -3,7 +3,7 @@
  */
 #include "motor_test.h"
 #include "motors.h"
-#include "homing.h"
+#include "homing_pro.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -55,7 +55,7 @@ bool motor_test_is_running(int motor)
 
 void motor_test_update(void)
 {
-    const bool homing_busy = (homing_get_state() == HOMING_RUNNING);
+    const bool homing_busy = (homing_pro_get_state() == HP_RUNNING);
     const TickType_t now = xTaskGetTickCount();
 
     for (int i = 0; i < NUM_MOTORS; i++) {

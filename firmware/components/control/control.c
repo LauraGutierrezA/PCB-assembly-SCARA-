@@ -9,7 +9,7 @@
 #include "control.h"
 #include "encoders.h"
 #include "motors.h"
-#include "homing.h"
+#include "homing_pro.h"
 #include "motor_test.h"
 
 #include "freertos/FreeRTOS.h"
@@ -59,22 +59,14 @@ static const float CTRL_DEN[NUM_JOINTS][3] = {
  *              DATOS MECANICOS DE CADA ARTICULACION
  * ============================================================
  *
- * GEAR: vueltas del eje del motor por cada vuelta de la articulacion.
- *   La reductora es 50:1. Si una articulacion tiene ademas poleas o
- *   engranes, multiplicar (p. ej. 50 * 2.0).
- *   Para th3 la IK entrega el angulo del eje del tornillo, asi que GEAR
- *   es la relacion entre el motor y el tornillo.
- *
- * HOME_RAD: angulo de la articulacion [rad] (en el mismo sistema de la IK)
- *   donde queda el robot al terminar el homing. Ahi se ponen los encoders
- *   en cero. Medirlo en el robot real.
+ * Ya no se configuran aqui (antes eran GEAR y HOME_RAD). El homingPRO
+ * mide la relacion real cuentas <-> articulacion y el sentido de cada
+ * encoder (components/homing_pro). Las relaciones nominales y los valores
+ * de los finales (-90/+90 grados, 18/123 mm) estan en homing_pro.c.
  */
-/*   Motor 1: reductora 50:1 y ademas 4:1 en el mecanismo -> 50 * 4.
- *   Motor 2: solo la reductora.
- *   Motor 3: vueltas del motor por vuelta del TORNILLO (la relacion
- *            tornillo -> altura, av, ya esta en la cinematica). */
-static const float GEAR[NUM_JOINTS]     = { 50.0f * 4.0f, 50.0f * 3.0f, 50.0f *  3.0f };
-static const float HOME_RAD[NUM_JOINTS] = { 0.0f,  0.0f,  0.0f };   /* TODO: medir */
+
+/* Radianes del EJE DEL MOTOR por cuenta del encoder (unidades de Gpos). */
+#define MOTOR_RAD_PER_COUNT  (6.28318531f / (float)ENC_COUNTS_PER_REV)
 
 
 /* ============================================================
@@ -150,32 +142,28 @@ static float joint_of(const joints_t *q, int i)
 
 
 /* ============================================================
- *          LEER SENSOR: posicion del eje del motor [rad]
+ *        ERROR: referencia - posicion, en rad del EJE DEL MOTOR
  * ============================================================
- * Se mide relativo al punto de homing, en radianes del EJE DEL MOTOR,
- * que son las unidades de la planta Gpos(s).
+ * Unidades de la planta Gpos(s). Con la calibracion del homingPRO:
+ *   referencia articular -> cuentas objetivo
+ *   error [cuentas] -> rad del motor, con el signo tal que u > 0, es decir
+ *   (IN1, IN2) = (1, 0), reduce el error.
  */
-static float leer_motor_rad(int i)
+static float error_motor_rad(int i, float q_ref)
 {
-    return encoder_get_motor_rad(i);
+    const float q   = homing_pro_clamp_joint(i, q_ref);   /* dentro del rango medido */
+    const float c_r = homing_pro_joint_to_counts(i, q);
+    const float c   = (float)encoder_get_count(i);
+    return (c_r - c) * (float)homing_pro_dir_sign(i) * MOTOR_RAD_PER_COUNT;
 }
 
-/* Referencia articular [rad] -> referencia en radianes del eje del motor,
- * medida desde el punto de homing. */
-static float ref_a_motor_rad(int i, float q_ref)
-{
-    return (q_ref - HOME_RAD[i]) * GEAR[i];
-}
-
+/* Posicion de cada articulacion: th1, th2 en rad; th3 en mm desde el piso.
+ * Antes del homingPRO devuelve 0 (ver homing_pro_calibrated()). */
 void control_get_position(joints_t *pos)
 {
-    float q[NUM_JOINTS];
-    for (int i = 0; i < NUM_JOINTS; i++) {
-        q[i] = leer_motor_rad(i) / GEAR[i] + HOME_RAD[i];
-    }
-    pos->th1 = q[0];
-    pos->th2 = q[1];
-    pos->th3 = q[2];
+    pos->th1 = homing_pro_counts_to_joint(0, encoder_get_count(0));
+    pos->th2 = homing_pro_counts_to_joint(1, encoder_get_count(1));
+    pos->th3 = homing_pro_counts_to_joint(2, encoder_get_count(2));
 }
 
 
@@ -258,9 +246,7 @@ static void escribir_actuador(int i, float u)
 static void control_step(const joints_t *r)
 {
     for (int i = 0; i < NUM_JOINTS; i++) {
-        float y   = leer_motor_rad(i);
-        float ref_m = ref_a_motor_rad(i, joint_of(r, i));
-        float e   = ref_m - y;
+        float e   = error_motor_rad(i, joint_of(r, i));
         float u   = controlador(i, e);
         escribir_actuador(i, u);
     }
@@ -280,12 +266,12 @@ void control_update(void)
     static bool     active = false;          /* el lazo esta mandando los motores */
     static uint32_t tick = 0;
 
-    const bool homed = (homing_get_state() == HOMING_DONE);
+    const bool homed = (homing_pro_get_state() == HP_DONE);
 
-    /* 1. Al terminar el homing: encoders en cero, memoria limpia y se
-     *    descarta cualquier consigna que llegara antes. */
+    /* 1. Al terminar el homing: memoria limpia y se descarta cualquier
+     *    consigna que llegara antes. (Los encoders NO se ponen en cero:
+     *    la calibracion del homingPRO depende de sus cuentas.) */
     if (homed && !homed_before) {
-        encoders_reset();
         reset_controladores();
         clear_reference();
         tick = 0;

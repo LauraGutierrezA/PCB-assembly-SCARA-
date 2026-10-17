@@ -4,7 +4,10 @@
  * Aqui vive la logica de la aplicacion (consignas, IK, control). Los modulos
  * de bajo nivel estan en components/:
  *   components/motors     -> PWM, direccion y finales de carrera
- *   components/homing     -> maquina de estados del homing
+ *   components/homing_pro -> homingPRO (doble toque + calibracion). Es el
+ *                            que usa la GUI.
+ *   components/homing     -> homing viejo por tiempo (NO se usa, se deja
+ *                            como referencia)
  *   components/kinematics -> cinematica directa e inversa (ik.c)
  *   components/encoders   -> lectura de los 3 encoders (PCNT, x4)
  *   components/control    -> referencias articulares y lazo de control (3 PD)
@@ -22,11 +25,13 @@
  *
  * Interfaz ROS 2:
  *   /scara/cmd     (std_msgs/String, PC -> ESP32):
- *                  "start"  -> homing desde el motor 1
- *                  "resume" -> continua el homing donde quedo
+ *                  "start"  -> homingPRO desde el motor 1 (encoders y
+ *                              calibracion en cero)
+ *                  "resume" -> continua el homingPRO en el paso donde quedo
  *                  "stop"   -> detiene todo
  *   /scara/status  (std_msgs/String, ESP32 -> PC): "IDLE", "HOMING M1 SEEK_L",
- *                  "ABORTED M2 SEEK_R", "HOMED". Se publica al cambiar y cada 1 s.
+ *                  "ABORTED M2 BACKOFF_L", "ERROR M3 NO_ENCODER", "HOMED".
+ *                  Se publica al cambiar y cada 1 s.
  *   /scara/target  (std_msgs/Float32MultiArray, PC -> ESP32), 11 valores:
  *                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]
  *                  (mm, av en mm/vuelta, codo = +1 o -1)
@@ -41,8 +46,11 @@
  *                  "stop <motor 1-3>"  |  "stop all"
  *   /scara/limits   (std_msgs/String, ESP32 -> PC): end-stops, motores y encoders,
  *                  "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0
- *                   E1=1234 E2=-56 E3=0 Q1=12.3 Q2=-0.5 Q3=0.0"
- *                  E = cuentas del encoder, Q = angulo de la articulacion [grados]
+ *                   E1=1234 E2=-56 E3=0 Q1=12.3 Q2=-0.5 Q3=70.5 CAL=1"
+ *                  E = cuentas del encoder
+ *                  Q1, Q2 = angulo de la articulacion [grados]
+ *                  Q3     = altura del eje Z [mm desde el piso]
+ *                  CAL = 1 si el homingPRO ya calibro (si no, Q no vale)
  *                  (Q3 = angulo del motor del tornillo). Se publica al cambiar
  *                  (revisado cada 100 ms) y cada 1 s.
  *
@@ -70,7 +78,7 @@
 #include "esp32_serial_transport.h"
 
 #include "motors.h"
-#include "homing.h"
+#include "homing_pro.h"
 #include "ik.h"
 #include "control.h"
 #include "encoders.h"
@@ -104,7 +112,7 @@ static void control_task(void *arg)
 {
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
-        homing_update();
+        homing_pro_update();
         control_update();
         motor_test_update();
         vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(CONTROL_LOOP_MS));
@@ -158,11 +166,11 @@ static void cmd_callback(const void *msgin)
 {
     const std_msgs__msg__String *m = (const std_msgs__msg__String *)msgin;
     if (cmd_is(m, "start")) {
-        homing_start();
+        homing_pro_start();
     } else if (cmd_is(m, "resume")) {
-        homing_resume();
+        homing_pro_resume();
     } else if (cmd_is(m, "stop")) {
-        homing_abort();
+        homing_pro_abort();
     }
     /* comandos desconocidos se ignoran */
 }
@@ -173,7 +181,7 @@ static void target_callback(const void *msgin)
 {
     const std_msgs__msg__Float32MultiArray *m =
         (const std_msgs__msg__Float32MultiArray *)msgin;
-    const int homed = (homing_get_state() == HOMING_DONE) ? 1 : 0;
+    const int homed = (homing_pro_get_state() == HP_DONE) ? 1 : 0;
 
     if (m->data.size != TARGET_LEN) {
         snprintf(ik_buf, sizeof(ik_buf), "ERR reason=BAD_MESSAGE n=%u homed=%d",
@@ -187,7 +195,11 @@ static void target_callback(const void *msgin)
         ik_status_t st = rrp_ik(&params, &target, codo, &q);
 
         if (st == IK_OK) {
-            control_set_reference(&q);
+            /* Para el control, la 3a articulacion es la ALTURA en mm desde
+             * el piso (lo que mide el homingPRO), no el angulo del tornillo.
+             * Se asume que la z de la consigna esta medida desde el piso. */
+            const joints_t q_ctrl = { q.th1, q.th2, target.z };
+            control_set_reference(&q_ctrl);
             snprintf(ik_buf, sizeof(ik_buf),
                      "OK x=%.1f y=%.1f z=%.1f th1=%.3f th2=%.3f th3=%.3f codo=%d homed=%d",
                      target.x, target.y, target.z,
@@ -243,13 +255,15 @@ static void limits_publish_tick(void)
     control_get_position(&q);
     snprintf(limits_buf, sizeof(limits_buf),
              "L1=%d R1=%d L2=%d R2=%d L3=%d R3=%d M1=%d M2=%d M3=%d "
-             "E1=%ld E2=%ld E3=%ld Q1=%.1f Q2=%.1f Q3=%.1f",
+             "E1=%ld E2=%ld E3=%ld Q1=%.1f Q2=%.1f Q3=%.1f CAL=%d",
              limit_l_pressed(0), limit_r_pressed(0),
              limit_l_pressed(1), limit_r_pressed(1),
              limit_l_pressed(2), limit_r_pressed(2),
              motor_test_is_running(0), motor_test_is_running(1), motor_test_is_running(2),
              (long)encoder_get_count(0), (long)encoder_get_count(1), (long)encoder_get_count(2),
-             q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3 * 57.2957795f);
+             q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3,
+             (homing_pro_calibrated(0) && homing_pro_calibrated(1) &&
+              homing_pro_calibrated(2)) ? 1 : 0);
 
     TickType_t now = xTaskGetTickCount();
     if (strcmp(limits_buf, limits_last) == 0 &&
@@ -271,12 +285,12 @@ static void status_timer_cb(rcl_timer_t *timer, int64_t last_call_time)
 
     limits_publish_tick();   /* prueba de circuito */
 
-    uint32_t s = homing_status_seq();
+    uint32_t s = homing_pro_status_seq();
     TickType_t now = xTaskGetTickCount();
     if (s == last_seq && (now - last_pub) < pdMS_TO_TICKS(HEARTBEAT_MS)) {
         return;
     }
-    homing_status_str(status_buf, sizeof(status_buf));
+    homing_pro_status_str(status_buf, sizeof(status_buf));
     status_msg.data.data = status_buf;
     status_msg.data.size = strlen(status_buf);
     status_msg.data.capacity = sizeof(status_buf);
@@ -347,7 +361,7 @@ static bool create_entities(void)
  * en pruebas: la reconstruccion en caliente quedaba en un ciclo de
  * conectar/desconectar sin crear el nodo, mientras que un arranque limpio
  * siempre conecta.
- * Efectos: los motores se detienen y el homing vuelve a IDLE.
+ * Efectos: los motores se detienen y el homingPRO vuelve a IDLE (sin calibrar).
  */
 static void restart_on_agent_loss(void)
 {

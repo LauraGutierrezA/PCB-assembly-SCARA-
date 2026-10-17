@@ -4,14 +4,19 @@ circuit_test_tab.py - Pestana "Prueba de circuito".
 Un modulo por motor, para probar cada parte del circuito por separado:
   1. End-stops: dos circulos (L y R) que se encienden al presionar el final
      de carrera. Funcionan aunque el motor este apagado.
-  2. Encoder: cuentas del encoder y angulo de la articulacion (grados).
-     Al mover el motor hacia L, las cuentas deben SUBIR.
+  2. Encoder: cuentas del encoder y posicion de la articulacion:
+     M1 y M2 en grados, M3 en mm desde el piso. La posicion solo aparece
+     despues del homingPRO (antes se muestra '—'); las cuentas, siempre.
   3. Accionamiento: sentido (-> L / -> R), velocidad (%), duracion (s),
      Start y Stop. El motor gira el tiempo indicado y se detiene solo.
      NO se detiene al tocar un end-stop (la prueba es aislada).
 
 Mientras el homing esta corriendo, los Start se deshabilitan (el homing
 tiene prioridad sobre los motores). Stop siempre funciona.
+
+Nombres de los finales por motor (END_STOP_NAMES): el motor 3 (tornillo)
+usa U/D en vez de L/R. Solo cambia lo que se VE: al ESP32 se le sigue
+mandando 'L' o 'R' (L = primer final = (IN1,IN2) = (1,0) = subir en M3).
 
 Topicos: /scara/test_cmd (ordenes) y /scara/limits (end-stops, motores y encoders).
 """
@@ -28,6 +33,13 @@ NUM_MOTORS = 3
 # Velocidad inicial de cada motor = la del homing (200, 512, 430 de 1023)
 DEFAULT_SPEED_PCT = {1: 20, 2: 50, 3: 42}
 DEFAULT_DURATION_S = 1.0
+
+# Nombre que se muestra para cada final: (final L, final R).
+# Motor 3: confirmado, (1,0) sube -> el final L es UP.
+END_STOP_NAMES = {1: ('L', 'R'), 2: ('L', 'R'), 3: ('U', 'D')}
+
+# Unidad de la posicion de cada motor en la seccion Encoder
+POSITION_UNITS = {1: '°', 2: '°', 3: ' mm'}
 
 LED_SIZE = 38
 
@@ -76,8 +88,9 @@ class MotorModule(QFrame):
         header.addWidget(self.running_label)
 
         # ---------- 1. End-stops ----------
-        self.led_l = EndStopLed('L')
-        self.led_r = EndStopLed('R')
+        name_l, name_r = END_STOP_NAMES.get(motor, ('L', 'R'))
+        self.led_l = EndStopLed(name_l)
+        self.led_r = EndStopLed(name_r)
         leds = QHBoxLayout()
         leds.setSpacing(14)
         leds.addWidget(self.led_l)
@@ -97,7 +110,8 @@ class MotorModule(QFrame):
         enc_row.addWidget(self.enc_angle)
 
         # ---------- 3. Accionamiento ----------
-        self.direction = SegmentedToggle([('→ L', 'L'), ('→ R', 'R')], default=0)
+        # El texto usa el nombre del final; el valor enviado sigue siendo L / R
+        self.direction = SegmentedToggle([(f'→ {name_l}', 'L'), (f'→ {name_r}', 'R')], default=0)
 
         self.speed = QSlider(Qt.Horizontal)
         self.speed.setRange(0, 100)
@@ -201,10 +215,13 @@ class MotorModule(QFrame):
         self.led_l.set_state(left)
         self.led_r.set_state(right)
 
-    def set_encoder(self, counts, angle_deg):
-        """counts: int o None (sin datos). angle_deg: float o None."""
+    def set_encoder(self, counts, position):
+        """counts: int o None (sin datos).
+        position: grados (M1, M2) o mm desde el piso (M3); None si no hay
+        datos o si el homingPRO todavia no ha calibrado."""
+        unit = POSITION_UNITS.get(self.motor, '°')
         self.enc_counts.setText('—' if counts is None else f'{counts} cts')
-        self.enc_angle.setText('—' if angle_deg is None else f'{angle_deg:.1f}°')
+        self.enc_angle.setText('—' if position is None else f'{position:.1f}{unit}')
 
     def set_running(self, running):
         if running:
@@ -257,7 +274,9 @@ class CircuitTestTab(QWidget):
         for m, module in self.modules.items():
             module.set_end_stops(d.get(f'L{m}'), d.get(f'R{m}'))
             module.set_running(bool(d.get(f'M{m}')))
-            module.set_encoder(d.get(f'E{m}'), d.get(f'Q{m}'))
+            # La posicion solo vale si el homingPRO ya calibro (CAL=1)
+            position = d.get(f'Q{m}') if d.get('CAL') else None
+            module.set_encoder(d.get(f'E{m}'), position)
 
     def _on_connection(self, connected):
         if not connected:

@@ -59,7 +59,8 @@ def parse_limits(text: str) -> dict:
       -> {'L1': False, 'R1': True, ..., 'E1': 1234, ..., 'Q1': 12.3, ...}
     L/R/M -> True/False (end-stops y motores)
     E     -> int   (cuentas del encoder)
-    Q     -> float (angulo de la articulacion, grados)
+    Q     -> float (Q1, Q2 en grados; Q3 en mm desde el piso)
+    CAL   -> True/False (el homingPRO ya calibro; si no, Q no vale)
     """
     out = {}
     for token in text.split():

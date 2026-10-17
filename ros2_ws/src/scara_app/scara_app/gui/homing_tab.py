@@ -6,7 +6,8 @@ Reglas de los botones:
     cualquier parte de la ventana (definido en main_window.py).
   - START solo con el ESP32 conectado.
   - RESUME solo con el ESP32 conectado y si el homing esta detenido
-    (ABORTED) o nunca se ha corrido (IDLE).
+    (ABORTED) o nunca se ha corrido (IDLE). Despues de un ERROR hay que
+    usar START (vuelve a calibrar desde cero).
 """
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
@@ -52,7 +53,7 @@ class HomingTab(QWidget):
 
     # ------------------------------------------------------------------
     def _on_status_changed(self, status):
-        color = theme.DANGER if status.startswith('ABORTED') else theme.TEXT
+        color = theme.DANGER if status.startswith(('ABORTED', 'ERROR')) else theme.TEXT
         self.log.append(status, color)
         self._update_buttons()
 

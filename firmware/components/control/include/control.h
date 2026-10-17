@@ -32,7 +32,9 @@
  * Debe ser multiplo de CONTROL_LOOP_MS. */
 #define CONTROL_TS_MS     32
 
-/* Nueva referencia articular [rad] (th3 = angulo del motor del tornillo). */
+/* Nueva referencia articular. OJO, unidades del control:
+ *   th1, th2 -> rad      th3 -> altura en mm desde el piso (NO el angulo
+ *   del tornillo de la IK; main.c pasa ahi la z de la consigna). */
 void control_set_reference(const joints_t *ref);
 
 /* Copia la referencia actual. Devuelve false si no hay una valida. */
@@ -44,8 +46,8 @@ uint32_t control_reference_seq(void);
 /* Un paso de la tarea de control. */
 void control_update(void);
 
-/* Posicion medida de cada articulacion [rad], en las mismas unidades que
- * la referencia (sirve para publicar y para la caracterizacion). */
+/* Posicion medida, en las mismas unidades que la referencia (th1, th2 en
+ * rad; th3 en mm desde el piso). Vale 0 antes del homingPRO. */
 void control_get_position(joints_t *pos);
 
 #endif /* CONTROL_H */
