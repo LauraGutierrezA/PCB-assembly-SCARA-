@@ -2,9 +2,17 @@
  * homing.h - Maquina de estados del homing (misma logica de Scara_Main.c).
  *
  * Por cada motor, en orden M1 -> M2 -> M3:
+ *
+ *   Motor con DOS finales (M1, M3):
  *   1. Avanza (1,0) hasta tocar el final L, frena 100 ms.
  *   2. Retrocede (0,1) hasta tocar el final R, frena 100 ms.
  *   3. Avanza (1,0) durante backoff_time_ms y se detiene (centro aproximado).
+ *
+ *   Motor con UN final (M2, ls_r_pin = NO_PIN):
+ *   1. Avanza (1,0) hasta tocar el final L, frena 100 ms.
+ *   2. Se devuelve (0,1) durante backoff_time_ms y se detiene.
+ *   (Provisional: luego se cambia a devolverse un numero de cuentas del
+ *   encoder.)
  *
  * Comandos:
  *   homing_start()  -> empieza SIEMPRE desde el motor 1, fase inicial.

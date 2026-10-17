@@ -132,7 +132,11 @@ void homing_update(void)
     case PH_PAUSE_L:
         motor_brake(m);
         if (elapsed_ms(BRAKE_PAUSE_MS)) {
-            set_phase(PH_SEEK_R);
+            if (motor_has_limit_r(m)) {
+                set_phase(PH_SEEK_R);      /* dos finales: ir a buscar el R */
+            } else {
+                set_phase(PH_BACKOFF);     /* un final: devolverse por tiempo */
+            }
         }
         break;
 
@@ -152,7 +156,13 @@ void homing_update(void)
         break;
 
     case PH_BACKOFF:
-        motor_set_dir(m, 1, 0);
+        /* Dos finales: viene del R, avanza hacia L (1,0).
+         * Un final:    viene del L, se devuelve (0,1). */
+        if (motor_has_limit_r(m)) {
+            motor_set_dir(m, 1, 0);
+        } else {
+            motor_set_dir(m, 0, 1);
+        }
         if (elapsed_ms(motors[m].backoff_time_ms)) {
             motor_coast(m);
             if (m + 1 < NUM_MOTORS) {

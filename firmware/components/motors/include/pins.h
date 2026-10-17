@@ -1,7 +1,8 @@
 /*
  * pins.h - Mapa de pines del SCARA (ESP32 DevKit V1, 30 pines).
  *
-
+ * UNICA fuente de verdad para los pines: firmware y PCB deben coincidir
+ * con esta tabla. Orden fisico del header (antena hacia arriba):
  *
  *            LADO IZQUIERDO                       LADO DERECHO
  *   EN                                      D23  M3_IN2
@@ -52,16 +53,16 @@
     #define PIN_LS_DOWN   14
 
     /* ---------- Direccion (enables) ---------- */
-    #define PIN_M1_IN1    25 //RDO 
+    #define PIN_M1_IN1    25 //RDO
     #define PIN_M1_IN2    26 //RDO
-    #define PIN_M2_IN1    18
+    #define PIN_M2_IN1    21
     #define PIN_M2_IN2    19
     #define PIN_M3_IN1    22
     #define PIN_M3_IN2    23
 
     /* ---------- PWM ---------- */
     #define PIN_M1_PWM    27 // RDO
-    #define PIN_M2_PWM    21
+    #define PIN_M2_PWM    18
     #define PIN_M3_PWM    13
 
     /* ---------- Encoders ---------- */

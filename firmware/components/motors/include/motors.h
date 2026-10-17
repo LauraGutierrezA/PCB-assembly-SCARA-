@@ -16,12 +16,16 @@
 
 #define NUM_MOTORS 3
 
+/* Valor para un final de carrera que NO existe (p. ej. el motor 2 solo
+ * tiene final L). Un pin NO_PIN no se configura y siempre lee "suelto". */
+#define NO_PIN (-1)
+
 typedef struct {
     int pwm_pin;
     int dir1_pin;
     int dir2_pin;
-    int ls_l_pin;              /* final de carrera L (izquierdo) */
-    int ls_r_pin;              /* final de carrera R (derecho) */
+    int ls_l_pin;              /* final al que se llega con (IN1,IN2) = (1,0) */
+    int ls_r_pin;              /* final al que se llega con (0,1); NO_PIN si no hay */
     ledc_channel_t pwm_channel;
     uint32_t backoff_time_ms;  /* tiempo de retroceso despues de B (homing por tiempo) */
     uint32_t homing_speed;     /* duty PWM 0..1023 (10 bits) */
@@ -39,5 +43,8 @@ void motors_stop_all(void);     /* todos en (0,0) */
 
 bool limit_l_pressed(int i);
 bool limit_r_pressed(int i);
+
+/* true si el motor i tiene segundo final de carrera (ls_r_pin != NO_PIN). */
+bool motor_has_limit_r(int i);
 
 #endif /* MOTORS_H */

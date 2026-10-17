@@ -15,8 +15,11 @@
 
 /* { pwm, in1, in2, final L, final R, canal, backoff_ms, homing_speed } */
 motor_config_t motors[NUM_MOTORS] = {
-    {PIN_M1_PWM, PIN_M1_IN1, PIN_M1_IN2, PIN_LS_L1, PIN_LS_R1, LEDC_CHANNEL_0, 2000, 200},
-    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, -1, LEDC_CHANNEL_1,  950, 512},
+    {PIN_M1_PWM, PIN_M1_IN1, PIN_M1_IN2, PIN_LS_L1, PIN_LS_R1,   LEDC_CHANNEL_0, 2000, 200},
+    /* Motor 2: un solo final (L) */
+    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, NO_PIN,      LEDC_CHANNEL_1,  950, 512},
+    /* Motor 3: PROVISIONAL, falta confirmar si (1,0) sube o baja. Si con
+     * (1,0) el tornillo BAJA, intercambiar PIN_LS_UP y PIN_LS_DOWN. */
     {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_UP, PIN_LS_DOWN, LEDC_CHANNEL_2, 3000, 430},
 };
 
@@ -24,12 +27,13 @@ motor_config_t motors[NUM_MOTORS] = {
  * (llevan resistencia externa); a los demas se les activa el pull-down. */
 static void config_limit_input(int pin)
 {
+    if (pin == NO_PIN) return;   /* ese final no existe */
     gpio_config_t conf = {
         .intr_type    = GPIO_INTR_DISABLE,
         .mode         = GPIO_MODE_INPUT,
         .pin_bit_mask = 1ULL << pin,
-        .pull_down_en = GPIO_IS_VALID_OUTPUT_GPIO(pin) ? 1 : 0,
-        .pull_up_en   = 0,
+        .pull_down_en = 0,
+        .pull_up_en   = 1,
     };
     gpio_config(&conf);
 }
@@ -103,5 +107,17 @@ void motors_stop_all(void)
     }
 }
 
-bool limit_l_pressed(int i) { return gpio_get_level(motors[i].ls_l_pin) == 1; }
-bool limit_r_pressed(int i) { return gpio_get_level(motors[i].ls_r_pin) == 1; }
+/* Un final que no existe (NO_PIN) siempre se lee como suelto. */
+bool limit_l_pressed(int i)
+{
+    if (motors[i].ls_l_pin == NO_PIN) return false;
+    return gpio_get_level(motors[i].ls_l_pin) == 0;
+}
+
+bool limit_r_pressed(int i)
+{
+    if (motors[i].ls_r_pin == NO_PIN) return false;
+    return gpio_get_level(motors[i].ls_r_pin) == 0;
+}
+
+bool motor_has_limit_r(int i) { return motors[i].ls_r_pin != NO_PIN; }
