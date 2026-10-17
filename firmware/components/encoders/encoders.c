@@ -43,12 +43,14 @@ static void init_one(int i)
     pcnt_channel_handle_t cha;
     ESP_ERROR_CHECK(pcnt_new_channel(unit[i], &cha_cfg, &cha));
 
-
     /* Canal B: cuenta flancos de B, mirando el nivel de A */
     pcnt_chan_config_t chb_cfg = { .edge_gpio_num = PIN_B[i], .level_gpio_num = PIN_A[i] };
     pcnt_channel_handle_t chb;
     ESP_ERROR_CHECK(pcnt_new_channel(unit[i], &chb_cfg, &chb));
-    
+
+    /* El driver activa el pull-up interno en A y B al crear CADA canal.
+     * Se apaga DESPUES de crear los dos canales, para que los 3 encoders
+     * queden iguales (en 34-39 no hay pull-up; en 32/33 si lo habia). */
     gpio_pullup_dis(PIN_A[i]);
     gpio_pullup_dis(PIN_B[i]);
 

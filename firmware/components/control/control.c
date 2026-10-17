@@ -69,7 +69,11 @@ static const float CTRL_DEN[NUM_JOINTS][3] = {
  *   donde queda el robot al terminar el homing. Ahi se ponen los encoders
  *   en cero. Medirlo en el robot real.
  */
-static const float GEAR[NUM_JOINTS]     = { 50.0f, 50.0f, 50.0f };
+/*   Motor 1: reductora 50:1 y ademas 4:1 en el mecanismo -> 50 * 4.
+ *   Motor 2: solo la reductora.
+ *   Motor 3: vueltas del motor por vuelta del TORNILLO (la relacion
+ *            tornillo -> altura, av, ya esta en la cinematica). */
+static const float GEAR[NUM_JOINTS]     = { 50.0f * 4.0f, 50.0f * 3.0f, 50.0f *  3.0f };
 static const float HOME_RAD[NUM_JOINTS] = { 0.0f,  0.0f,  0.0f };   /* TODO: medir */
 
 

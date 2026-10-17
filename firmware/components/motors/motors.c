@@ -17,14 +17,14 @@
 motor_config_t motors[NUM_MOTORS] = {
     {PIN_M1_PWM, PIN_M1_IN1, PIN_M1_IN2, PIN_LS_L1, PIN_LS_R1,   LEDC_CHANNEL_0, 2000, 200},
     /* Motor 2: un solo final (L) */
-    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, NO_PIN,      LEDC_CHANNEL_1,  950, 512},
+    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, NO_PIN,      LEDC_CHANNEL_1,  450, 512},
     /* Motor 3: PROVISIONAL, falta confirmar si (1,0) sube o baja. Si con
      * (1,0) el tornillo BAJA, intercambiar PIN_LS_UP y PIN_LS_DOWN. */
     {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_UP, PIN_LS_DOWN, LEDC_CHANNEL_2, 3000, 430},
 };
 
-/* Configura un final de carrera. Los GPIO 34-39 no tienen pull interno
- * (llevan resistencia externa); a los demas se les activa el pull-down. */
+/* Configura un final de carrera con pull-up interno: el final se conecta
+ * a GND y, presionado, el pin lee 0. */
 static void config_limit_input(int pin)
 {
     if (pin == NO_PIN) return;   /* ese final no existe */
