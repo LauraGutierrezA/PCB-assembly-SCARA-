@@ -21,8 +21,8 @@
  * ============================================================ */
 
 /* Valores que se marcan en el segundo toque de cada final */
-#define M1_L_DEG        (-90.0f)
-#define M1_R_DEG        ( 90.0f)
+#define M1_L_DEG        (-72.0f)
+#define M1_R_DEG        ( 72.0f)
 #define M2_L_DEG        (-90.0f)
 #define M3_TOP_MM       (126.0f)    /* final UP (L): 126 mm del piso */
 #define M3_BOTTOM_MM    ( 19.3f)    /* final DOWN (R): 19.3 mm del piso */
