@@ -49,16 +49,16 @@
     #define PIN_LS_L1     5
     #define PIN_LS_R1     17
     #define PIN_LS_L2     4
-    #define PIN_LS_UP     15
-    #define PIN_LS_DOWN   14
+    #define PIN_LS_UP     14
+    #define PIN_LS_DOWN   15
 
     /* ---------- Direccion (enables) ---------- */
     #define PIN_M1_IN1    25 //RDO
     #define PIN_M1_IN2    26 //RDO
     #define PIN_M2_IN1    21
     #define PIN_M2_IN2    19
-    #define PIN_M3_IN1    22
-    #define PIN_M3_IN2    23
+    #define PIN_M3_IN1    23
+    #define PIN_M3_IN2    22
 
     /* ---------- PWM ---------- */
     #define PIN_M1_PWM    27 // RDO

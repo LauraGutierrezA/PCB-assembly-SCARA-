@@ -24,13 +24,13 @@
 #define M1_L_DEG        (-90.0f)
 #define M1_R_DEG        ( 90.0f)
 #define M2_L_DEG        (-90.0f)
-#define M3_TOP_MM       (123.0f)    /* final UP (L) */
-#define M3_BOTTOM_MM    ( 18.0f)    /* final DOWN (R) */
+#define M3_TOP_MM       (126.0f)    /* final UP (L): 126 mm del piso */
+#define M3_BOTTOM_MM    ( 19.3f)    /* final DOWN (R): 19.3 mm del piso */
 
 /* Donde se estaciona cada motor al final */
 #define M1_HOME_DEG     (0.0f)
 #define M2_HOME_DEG     (0.0f)
-#define M3_HOME_MM      ((M3_TOP_MM + M3_BOTTOM_MM) / 5.0f)   /* 70.5 mm */
+#define M3_HOME_MM      ((M3_TOP_MM + M3_BOTTOM_MM) / 2.0f)   /* 72.65 mm del piso (53.35 mm de cada final) */
 
 /* Rango permitido para M2 (solo tiene final en -90) */
 #define M2_MAX_DEG      (90.0f)

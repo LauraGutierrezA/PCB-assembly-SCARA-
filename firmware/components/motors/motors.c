@@ -17,9 +17,9 @@
 motor_config_t motors[NUM_MOTORS] = {
     {PIN_M1_PWM, PIN_M1_IN1, PIN_M1_IN2, PIN_LS_L1, PIN_LS_R1,   LEDC_CHANNEL_0, 2000, 200},
     /* Motor 2: un solo final (L) */
-    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, NO_PIN,      LEDC_CHANNEL_1,  450, 512},
+    {PIN_M2_PWM, PIN_M2_IN1, PIN_M2_IN2, PIN_LS_L2, NO_PIN,      LEDC_CHANNEL_1,  450, 200},
     /* Motor 3: confirmado, con (1,0) el tornillo SUBE -> UP va como final L */
-    {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_UP, PIN_LS_DOWN, LEDC_CHANNEL_2, 3000, 430},
+    {PIN_M3_PWM, PIN_M3_IN1, PIN_M3_IN2, PIN_LS_UP, PIN_LS_DOWN, LEDC_CHANNEL_2, 3000, 800},
 };
 
 /* Configura un final de carrera con pull-up interno: el final se conecta

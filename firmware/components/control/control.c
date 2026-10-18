@@ -300,8 +300,7 @@ static bool any_motor_test_running(void)
     }
     return false;
 }
- */
-static const float CTRL_
+
 void control_update(void)
 {
     static bool     homed_before = false;   /* para detectar el fin del homing */

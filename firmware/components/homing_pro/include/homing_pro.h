@@ -75,7 +75,7 @@ float homing_pro_joint_to_counts(int i, float q);
 int homing_pro_dir_sign(int i);
 
 /* true si q esta dentro del rango de la articulacion (no necesita homing):
- *   M1, M2: [-90, +90] grados (en rad)   M3: [18, 123] mm
+ *   M1, M2: [-90, +90] grados (en rad)   M3: [19.3, 126] mm
  * main.c lo usa para rechazar consignas fuera de rango. */
 bool homing_pro_in_range(int i, float q);
 
