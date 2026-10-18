@@ -27,7 +27,7 @@
  *        COEFICIENTES DE LOS CONTROLADORES  (LLENAR AQUI)
  * ============================================================
  *
- * Pegar lo que da MATLAB para cada motor:
+ * TF de Matlab:
  *     [numD1, denD1] = tfdata(D1z, 'v')
  *
  *          b0 z^2 + b1 z + b2
@@ -40,12 +40,9 @@
  *     NUM  = {q0, q1, 0}
  *     DEN  = {1,  0,  0}
  *
- * Con todo en 0 el controlador da u = 0 (el motor no se mueve): es seguro
- * dejarlo asi hasta pegar los valores reales.
  */
 /* Asignacion de polos PD (NPI_Proyecto.mlx): zita = 1.2, ts = 0.32 s,
- * Ts = 0.032 s. D2z se recalculo con el mismo metodo (el script imprime
- * D1z en lugar de D2z). */
+ * Ts = 0.032 s. D2z se recalculo  */
 static const float CTRL_NUM[NUM_JOINTS][3] = {
     { 0.2262f, -0.1305f, 0.0f },   /* motor 1: numD1 */
     { 0.2463f, -0.1472f, 0.0f },   /* motor 2: numD2 */
@@ -303,7 +300,8 @@ static bool any_motor_test_running(void)
     }
     return false;
 }
-
+ */
+static const float CTRL_
 void control_update(void)
 {
     static bool     homed_before = false;   /* para detectar el fin del homing */
