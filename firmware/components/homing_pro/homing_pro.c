@@ -44,7 +44,7 @@
 #define GEAR_M1_NOMINAL (50.0f * 4.0f)
 #define GEAR_M2         (50.0f * 3.0f)
 #define GEAR_M3_NOMINAL (50.0f * 3.0f)
-#define AV_NOMINAL_MM   (20.0f)          /* mm por vuelta del tornillo */
+#define AV_NOMINAL_MM   (2.0f)          /* mm por vuelta del tornillo */
 
 /* "Un tris": cuanto se devuelve antes del segundo toque */
 #define BACKOFF_DEG     (2.0f)           /* M1 y M2 */
