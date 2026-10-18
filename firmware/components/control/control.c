@@ -74,8 +74,8 @@ static const float CTRL_DEN[NUM_JOINTS][3] = {
  *   apenas se mueva. V_DEAD = (% / 100) * V_SUPPLY.  Ej: 15 %  ->  1.8 V
  * Con 0.0f no se compensa (como si no existiera esta parte).
  */
-static const float V_DEAD[NUM_JOINTS] = { 0.0f, 10.0f, 7.0f };   /* TODO: medir [V] */
-#define DEAD_TOL_COUNTS   3      /* "llego" si esta a +-3 cuentas del objetivo */
+static const float V_DEAD[NUM_JOINTS] = { 36.0f/100.0f*12.0f, 10.0f/100.0f*12.0f, 7.0f/100.0f*12.0f };
+#define DEAD_TOL_COUNTS   10      /* "llego" si esta a +-10 cuentas del objetivo */
 
 
 /* ============================================================
