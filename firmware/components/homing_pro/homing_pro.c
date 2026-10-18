@@ -44,7 +44,7 @@
 #define GEAR_M1_NOMINAL (50.0f * 4.0f)
 #define GEAR_M2         (50.0f * 3.0f)
 #define GEAR_M3_NOMINAL (50.0f * 3.0f)
-#define AV_NOMINAL_MM   (2.0f)          /* mm por vuelta del tornillo */
+#define AV_NOMINAL_MM   (2.0f)           /* mm por vuelta del tornillo (igual a av de la GUI) */
 
 /* "Un tris": cuanto se devuelve antes del segundo toque */
 #define BACKOFF_DEG     (2.0f)           /* M1 y M2 */
@@ -520,6 +520,17 @@ int homing_pro_dir_sign(int i)
 {
     const calib_t c = get_cal(i);
     return c.ok ? c.dir_sign : +1;
+}
+
+bool homing_pro_in_range(int i, float q)
+{
+    float lo, hi;
+    switch (i) {
+    case 0:  lo = deg2rad(M1_L_DEG); hi = deg2rad(M1_R_DEG);   break;
+    case 1:  lo = deg2rad(M2_L_DEG); hi = deg2rad(M2_MAX_DEG); break;
+    default: lo = M3_BOTTOM_MM;      hi = M3_TOP_MM;           break;
+    }
+    return q >= lo && q <= hi;
 }
 
 float homing_pro_clamp_joint(int i, float q)

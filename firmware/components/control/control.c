@@ -7,6 +7,7 @@
  * La diferencia es que aqui hay 3 lazos independientes, uno por motor.
  */
 #include "control.h"
+#include <math.h>
 #include "encoders.h"
 #include "motors.h"
 #include "homing_pro.h"
@@ -42,17 +43,42 @@
  * Con todo en 0 el controlador da u = 0 (el motor no se mueve): es seguro
  * dejarlo asi hasta pegar los valores reales.
  */
+/* Asignacion de polos PD (NPI_Proyecto.mlx): zita = 1.2, ts = 0.32 s,
+ * Ts = 0.032 s. D2z se recalculo con el mismo metodo (el script imprime
+ * D1z en lugar de D2z). */
 static const float CTRL_NUM[NUM_JOINTS][3] = {
-    { 0.0f, 0.0f, 0.0f },   /* motor 1: numD1 */
-    { 0.0f, 0.0f, 0.0f },   /* motor 2: numD2 */
-    { 0.0f, 0.0f, 0.0f },   /* motor 3: numD3 */
+    { 0.2262f, -0.1305f, 0.0f },   /* motor 1: numD1 */
+    { 0.2463f, -0.1472f, 0.0f },   /* motor 2: numD2 */
+    { 0.2142f, -0.1265f, 0.0f },   /* motor 3: numD3 */
 };
 
 static const float CTRL_DEN[NUM_JOINTS][3] = {
-    { 1.0f, 0.0f, 0.0f },   /* motor 1: denD1 */
-    { 1.0f, 0.0f, 0.0f },   /* motor 2: denD2 */
-    { 1.0f, 0.0f, 0.0f },   /* motor 3: denD3 */
+    { 1.0f, 0.0f, 0.0f },   /* motor 1: denD1 = [1 0] */
+    { 1.0f, 0.0f, 0.0f },   /* motor 2: denD2 = [1 0] */
+    { 1.0f, 0.0f, 0.0f },   /* motor 3: denD3 = [1 0] */
 };
+
+
+/* ============================================================
+ *          COMPENSACION DE ZONA MUERTA  (MEDIR Y LLENAR)
+ * ============================================================
+ *
+ * Un PD no tiene integrador: cerca del objetivo su salida es tan pequena
+ * que no vence la friccion y el motor se queda corto. Ejemplo (simulado,
+ * motor 1): con 1.5 V de zona muerta, una consigna de 90 grados termina en
+ * 85.5 grados.
+ *
+ * Solucion: mientras el error sea mayor que DEAD_TOL_COUNTS, se le suma a
+ * la salida V_DEAD (en el sentido de la salida). Ya en el objetivo, la
+ * salida es 0 (no vibra).
+ *
+ * V_DEAD[i] = voltaje minimo con el que arranca el motor i.
+ *   Medirlo en "Prueba de circuito": subir la velocidad hasta que el motor
+ *   apenas se mueva. V_DEAD = (% / 100) * V_SUPPLY.  Ej: 15 %  ->  1.8 V
+ * Con 0.0f no se compensa (como si no existiera esta parte).
+ */
+static const float V_DEAD[NUM_JOINTS] = { 0.0f, 10.0f, 7.0f };   /* TODO: medir [V] */
+#define DEAD_TOL_COUNTS   3      /* "llego" si esta a +-3 cuentas del objetivo */
 
 
 /* ============================================================
@@ -149,6 +175,8 @@ static float joint_of(const joints_t *q, int i)
  *   error [cuentas] -> rad del motor, con el signo tal que u > 0, es decir
  *   (IN1, IN2) = (1, 0), reduce el error.
  */
+static float signo(float x) { return (x > 0.0f) ? 1.0f : (x < 0.0f) ? -1.0f : 0.0f; }
+
 static float error_motor_rad(int i, float q_ref)
 {
     const float q   = homing_pro_clamp_joint(i, q_ref);   /* dentro del rango medido */
@@ -246,8 +274,24 @@ static void escribir_actuador(int i, float u)
 static void control_step(const joints_t *r)
 {
     for (int i = 0; i < NUM_JOINTS; i++) {
-        float e   = error_motor_rad(i, joint_of(r, i));
-        float u   = controlador(i, e);
+        float e = error_motor_rad(i, joint_of(r, i));
+        float u = controlador(i, e);
+
+        /* 1. Zona muerta: si aun no llega, empujar al menos V_DEAD;
+         *    si ya llego, salida 0 para que no vibre. */
+        if (fabsf(e) > (float)DEAD_TOL_COUNTS * MOTOR_RAD_PER_COUNT) {
+            u = limitar(u + signo(u) * V_DEAD[i], -U_MAX_V, U_MAX_V);
+        } else {
+            u = 0.0f;
+        }
+
+        /* 2. Finales de carrera: si el motor esta tocando el final hacia
+         *    el que lo mandan, se para (alejarse del final si se permite).
+         *    u > 0 -> (1,0) -> hacia el final L;  u < 0 -> hacia el final R */
+        if ((u > 0.0f && limit_l_pressed(i)) || (u < 0.0f && limit_r_pressed(i))) {
+            u = 0.0f;
+        }
+
         escribir_actuador(i, u);
     }
 }

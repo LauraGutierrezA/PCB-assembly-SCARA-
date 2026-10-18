@@ -41,7 +41,7 @@ def parse_ik(text: str) -> dict:
         if '=' not in token:
             continue
         key, value = token.split('=', 1)
-        if key in ('codo', 'homed', 'n'):
+        if key in ('codo', 'homed', 'n', 'joint'):
             result[key] = int(value)
         elif key == 'reason':
             result[key] = value

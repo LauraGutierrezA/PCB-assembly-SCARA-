@@ -33,6 +33,7 @@ REASONS = {
     'OUT_OF_REACH': 'fuera del alcance en XY',
     'BAD_PARAMS':   'parametros invalidos (d1, d2 deben ser > 0 y av distinto de 0)',
     'BAD_MESSAGE':  'mensaje con formato incorrecto',
+    'OUT_OF_RANGE': 'fuera del rango de la articulacion (M1, M2: -90..90 grados; M3: 18..123 mm)',
 }
 
 
@@ -163,6 +164,8 @@ class PointToPointTab(QWidget):
                 self.console.append('  Aviso: el robot no ha hecho homing', theme.CONNECTED)
         else:
             reason = REASONS.get(r.get('reason', ''), r.get('reason', 'error'))
+            if 'joint' in r:
+                reason += f" [articulacion {int(r['joint'])}]"
             self.console.append(f'No se puede llegar a {target}: {reason}', theme.DANGER)
 
     def _on_timeout(self):

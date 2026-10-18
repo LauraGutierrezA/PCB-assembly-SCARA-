@@ -199,12 +199,27 @@ static void target_callback(const void *msgin)
              * el piso (lo que mide el homingPRO), no el angulo del tornillo.
              * Se asume que la z de la consigna esta medida desde el piso. */
             const joints_t q_ctrl = { q.th1, q.th2, target.z };
-            control_set_reference(&q_ctrl);
-            snprintf(ik_buf, sizeof(ik_buf),
-                     "OK x=%.1f y=%.1f z=%.1f th1=%.3f th2=%.3f th3=%.3f codo=%d homed=%d",
-                     target.x, target.y, target.z,
-                     q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3,
-                     codo, homed);
+
+            /* Rechazar si alguna articulacion queda fuera de su rango
+             * (M1, M2: -90..+90 grados; M3: 18..123 mm). La consigna NO se
+             * aplica: el robot se queda donde esta. */
+            const float qv[3] = { q_ctrl.th1, q_ctrl.th2, q_ctrl.th3 };
+            int bad = 0;
+            for (int j = 0; j < 3 && !bad; j++) {
+                if (!homing_pro_in_range(j, qv[j])) bad = j + 1;
+            }
+            if (bad) {
+                snprintf(ik_buf, sizeof(ik_buf),
+                         "ERR x=%.1f y=%.1f z=%.1f reason=OUT_OF_RANGE joint=%d homed=%d",
+                         target.x, target.y, target.z, bad, homed);
+            } else {
+                control_set_reference(&q_ctrl);
+                snprintf(ik_buf, sizeof(ik_buf),
+                         "OK x=%.1f y=%.1f z=%.1f th1=%.3f th2=%.3f th3=%.3f codo=%d homed=%d",
+                         target.x, target.y, target.z,
+                         q.th1 * 57.2957795f, q.th2 * 57.2957795f, q.th3,
+                         codo, homed);
+            }
         } else {
             snprintf(ik_buf, sizeof(ik_buf),
                      "ERR x=%.1f y=%.1f z=%.1f reason=%s homed=%d",
