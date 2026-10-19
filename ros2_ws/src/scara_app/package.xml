@@ -15,6 +15,8 @@
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
   <exec_depend>python3-pyqt5</exec_depend>
+  <!-- Interfaz web (scara_web): NiceGUI no esta en rosdep, se instala con pip:
+       pip install nicegui (con la opcion break-system-packages) -->
 
   <export>
     <build_type>ament_python</build_type>

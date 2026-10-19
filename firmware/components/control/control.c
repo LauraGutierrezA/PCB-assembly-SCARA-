@@ -145,6 +145,42 @@ static void clear_reference(void)
     portEXIT_CRITICAL(&ref_lock);
 }
 
+void control_release(void)
+{
+    clear_reference();
+}
+
+
+/* ============================================================
+ *                 DEAD-MAN SWITCH (hold-to-run)
+ * ============================================================
+ * Lo escribe micro-ROS (nucleo 0) y lo lee el control (nucleo 1). Son
+ * variables de 32 bits: leerlas/escribirlas es atomico en el ESP32.
+ */
+static volatile bool       dm_held = false;
+static volatile TickType_t dm_last = 0;
+
+void control_deadman_beat(void)
+{
+    dm_last = xTaskGetTickCount();
+    dm_held = true;
+}
+
+void control_deadman_release(void)
+{
+    dm_held = false;
+}
+
+static bool deadman_ok(void)
+{
+    if (!dm_held) return false;
+    if ((xTaskGetTickCount() - dm_last) >= pdMS_TO_TICKS(DEADMAN_TIMEOUT_MS)) {
+        dm_held = false;          /* se perdio el latido: soltar */
+        return false;
+    }
+    return true;
+}
+
 
 /* ============================================================
  *                      UTILIDADES
@@ -319,10 +355,12 @@ void control_update(void)
     }
     homed_before = homed;
 
-    /* 2. Solo se controla con homing hecho, con consigna y sin una
-     *    prueba de circuito corriendo (si no, se pelearian los motores). */
+    /* 2. Solo se controla con homing hecho, con consigna, sin una
+     *    prueba de circuito corriendo (si no, se pelearian los motores) y
+     *    con el dead-man presionado. */
     joints_t r;
-    if (!homed || !control_get_reference(&r) || any_motor_test_running()) {
+    if (!homed || !control_get_reference(&r) || any_motor_test_running() ||
+        !deadman_ok()) {
         if (active) {
             /* Se deja de controlar: soltar motores y olvidar la memoria */
             if (homed) motors_stop_all();

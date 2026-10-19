@@ -13,6 +13,14 @@
  * Los coeficientes de D(z) se pegan en control.c (CTRL_NUM / CTRL_DEN),
  * tal cual los da MATLAB con  [num, den] = tfdata(Dz, 'v').
  *
+ * Dead-man switch (hold-to-run):
+ *   El lazo SOLO mueve los motores mientras la interfaz confirma que el
+ *   operador tiene el dedo en el boton (o la barra espaciadora). La GUI
+ *   manda un "latido" (control_deadman_beat) cada ~100 ms; si pasan
+ *   DEADMAN_TIMEOUT_MS sin latido (se solto el boton, se cayo el WiFi, se
+ *   cerro la GUI...), los motores se detienen. La consigna se conserva: al
+ *   volver a presionar, el robot sigue hacia ella.
+ *
  * Uso entre tareas (seguro):
  *   - control_set_reference() se llama desde micro-ROS (nucleo 0).
  *   - control_update() la llama la tarea de control (nucleo 1) cada
@@ -42,6 +50,19 @@ bool control_get_reference(joints_t *ref);
 
 /* Contador de referencias recibidas (cambia con cada consigna nueva). */
 uint32_t control_reference_seq(void);
+
+/* Sin latido en este tiempo, el dead-man se considera suelto. */
+#define DEADMAN_TIMEOUT_MS  300
+
+/* Dead-man presionado: llamarla cada < DEADMAN_TIMEOUT_MS mientras se mantenga. */
+void control_deadman_beat(void);
+
+/* Dead-man suelto: los motores se detienen de inmediato. */
+void control_deadman_release(void);
+
+/* Borra la consigna: el robot se queda donde esta hasta una consigna nueva
+ * (Stop, entrar a "Prueba de circuito", consigna rechazada). */
+void control_release(void);
 
 /* Un paso de la tarea de control. */
 void control_update(void);

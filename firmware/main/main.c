@@ -28,7 +28,15 @@
  *                  "start"  -> homingPRO desde el motor 1 (encoders y
  *                              calibracion en cero)
  *                  "resume" -> continua el homingPRO en el paso donde quedo
- *                  "stop"   -> detiene todo
+ *                  "stop"   -> detiene todo: aborta el homing, borra la
+ *                              consigna y suelta el dead-man
+ *                  "release"-> borra la consigna (la GUI lo manda al entrar
+ *                              a "Prueba de circuito")
+ *                  "dm1"    -> latido del dead-man (cada ~100 ms mientras el
+ *                              operador lo mantiene presionado)
+ *                  "dm0"    -> dead-man suelto
+ *                  El control solo mueve los motores con dead-man presionado
+ *                  (ver control.h).
  *   /scara/status  (std_msgs/String, ESP32 -> PC): "IDLE", "HOMING M1 SEEK_L",
  *                  "ABORTED M2 BACKOFF_L", "ERROR M3 NO_ENCODER", "HOMED".
  *                  Se publica al cambiar y cada 1 s.
@@ -171,6 +179,14 @@ static void cmd_callback(const void *msgin)
         homing_pro_resume();
     } else if (cmd_is(m, "stop")) {
         homing_pro_abort();
+        control_release();          /* si no, el PD volvia a la consigna */
+        control_deadman_release();
+    } else if (cmd_is(m, "dm1")) {
+        control_deadman_beat();
+    } else if (cmd_is(m, "dm0")) {
+        control_deadman_release();
+    } else if (cmd_is(m, "release")) {
+        control_release();
     }
     /* comandos desconocidos se ignoran */
 }
@@ -184,6 +200,7 @@ static void target_callback(const void *msgin)
     const int homed = (homing_pro_get_state() == HP_DONE) ? 1 : 0;
 
     if (m->data.size != TARGET_LEN) {
+        control_release();
         snprintf(ik_buf, sizeof(ik_buf), "ERR reason=BAD_MESSAGE n=%u homed=%d",
                  (unsigned)m->data.size, homed);
     } else {
@@ -201,14 +218,16 @@ static void target_callback(const void *msgin)
             const joints_t q_ctrl = { q.th1, q.th2, target.z };
 
             /* Rechazar si alguna articulacion queda fuera de su rango
-             * (M1, M2: -90..+90 grados; M3: 18..123 mm). La consigna NO se
-             * aplica: el robot se queda donde esta. */
+             * (M1, M2: -90..+90 grados; M3: 19.3..126 mm). La consigna NO se
+             * aplica y se borra la anterior: el robot se queda donde esta
+             * (aunque se presione el dead-man). */
             const float qv[3] = { q_ctrl.th1, q_ctrl.th2, q_ctrl.th3 };
             int bad = 0;
             for (int j = 0; j < 3 && !bad; j++) {
                 if (!homing_pro_in_range(j, qv[j])) bad = j + 1;
             }
             if (bad) {
+                control_release();
                 snprintf(ik_buf, sizeof(ik_buf),
                          "ERR x=%.1f y=%.1f z=%.1f reason=OUT_OF_RANGE joint=%d homed=%d",
                          target.x, target.y, target.z, bad, homed);
@@ -221,6 +240,7 @@ static void target_callback(const void *msgin)
                          codo, homed);
             }
         } else {
+            control_release();
             snprintf(ik_buf, sizeof(ik_buf),
                      "ERR x=%.1f y=%.1f z=%.1f reason=%s homed=%d",
                      target.x, target.y, target.z, ik_status_name(st), homed);

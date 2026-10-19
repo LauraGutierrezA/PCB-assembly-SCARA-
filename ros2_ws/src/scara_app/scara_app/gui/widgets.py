@@ -4,10 +4,13 @@ widgets.py - Piezas reutilizables de la interfaz (con el estilo de theme.py).
 import html
 from datetime import datetime
 
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 from PyQt5.QtGui import QTextBlockFormat, QTextCursor
 from PyQt5.QtWidgets import (
     QButtonGroup, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget,
 )
+
+from scara_app.robot_model import DEADMAN_PERIOD_S
 
 from . import theme
 
@@ -110,5 +113,93 @@ class SegmentedToggle(QWidget):
     def value(self):
         return self._values[self._group.checkedId()]
 
+    def connect_changed(self, fn):
+        """fn(valor): se llama cuando el usuario toca una opcion."""
+        self._group.buttonClicked.connect(lambda _b: fn(self.value()))
+
     def set_index(self, index):
         self._group.button(index).setChecked(True)
+
+
+class Deadman(QObject):
+    """Dead-man switch de la ventana (uno solo para todas las pestanas).
+
+    Varias "fuentes" pueden mantenerlo: el boton de cada pestana y la barra
+    espaciadora. Mientras haya al menos una, manda un latido ("dm1") cada
+    DEADMAN_PERIOD_S; al soltar la ultima manda "dm0" y el firmware detiene
+    los motores. Si la interfaz se congela, el QTimer deja de latir y el
+    firmware tambien se detiene (300 ms sin latido).
+    """
+    held_changed = pyqtSignal(bool)
+
+    def __init__(self, ros_node, parent=None):
+        super().__init__(parent)
+        self.node = ros_node
+        self._sources = set()
+        self._timer = QTimer(self)
+        self._timer.setInterval(int(DEADMAN_PERIOD_S * 1000))
+        self._timer.timeout.connect(self.node.deadman_beat)
+
+    @property
+    def held(self):
+        return bool(self._sources)
+
+    def press(self, source, on_start=None):
+        """on_start: se llama al empezar a mantener (p. ej. para mandar la consigna)."""
+        was_held = self.held
+        self._sources.add(source)
+        if not was_held:
+            if on_start is not None:
+                on_start()
+            self.node.deadman_beat()
+            self._timer.start()
+            self.held_changed.emit(True)
+
+    def release(self, source):
+        if source not in self._sources:
+            return
+        self._sources.discard(source)
+        if not self._sources:
+            self._stop()
+
+    def release_all(self):
+        if self._sources:
+            self._sources.clear()
+            self._stop()
+
+    def _stop(self):
+        self._timer.stop()
+        self.node.deadman_release()
+        self.held_changed.emit(False)
+
+
+class DeadmanButton(QPushButton):
+    """Boton "mantener para mover". Al presionarlo llama on_start (mandar la
+    consigna) y mantiene el dead-man hasta soltarlo. La barra espaciadora
+    hace lo mismo (main_window.py la redirige a press_space/release_space)."""
+
+    IDLE_TEXT = 'Mantener para mover  (Espacio)'
+    HELD_TEXT = 'Moviendo... suelta para detener'
+
+    def __init__(self, deadman, on_start, parent=None):
+        super().__init__(self.IDLE_TEXT, parent)
+        self.setObjectName('deadman')
+        self.setProperty('held', False)
+        self.setMinimumHeight(64)
+        self.deadman = deadman
+        self.on_start = on_start
+        self.pressed.connect(lambda: self.deadman.press(self, self.on_start))
+        self.released.connect(lambda: self.deadman.release(self))
+        self.deadman.held_changed.connect(self._show_held)
+
+    def press_space(self):
+        self.deadman.press('space', self.on_start)
+
+    def release_space(self):
+        self.deadman.release('space')
+
+    def _show_held(self, held):
+        self.setText(self.HELD_TEXT if held else self.IDLE_TEXT)
+        self.setProperty('held', held)
+        self.style().unpolish(self)
+        self.style().polish(self)

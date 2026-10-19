@@ -26,6 +26,8 @@ DANGER_BG_HOVER = '#ec4a60'
 DANGER_BG_OFF = '#6c2842'  # boton Stop deshabilitado
 CONNECTED    = '#f0b429'   # punto de conexion activo
 DISCONNECTED = DANGER      # punto de conexion inactivo
+TWIN_REAL    = '#5b6690'   # gemelo: robot real (encoders), en planta
+TWIN_REAL_3D = '#59628c'   # gemelo: robot real, en 3D
 
 # ---------------- Tipografias ----------------
 _MONO_CANDIDATES = ['JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'Ubuntu Mono',
@@ -195,6 +197,27 @@ def stylesheet():
     }}
     QPushButton#segment[position="first"]:checked {{ border-right: 1px solid {ACCENT}; }}
     QPushButton#segment:hover:!checked {{ color: {TEXT}; }}
+
+    QPushButton#deadman {{
+        background: transparent;
+        color: {ACCENT};
+        border: 2px dashed {ACCENT};
+        font-size: 16px;
+        padding: 16px 24px;
+    }}
+    QPushButton#deadman[held="true"] {{
+        background: {ACCENT};
+        color: {BG_PAGE};
+        border: 2px solid {ACCENT};
+    }}
+
+    QSlider::groove:horizontal {{
+        height: 6px; background: {DIVIDER}; border-radius: 3px;
+    }}
+    QSlider::sub-page:horizontal {{ background: {PRIMARY}; border-radius: 3px; }}
+    QSlider::handle:horizontal {{
+        background: {ACCENT}; width: 20px; height: 20px; margin: -7px 0; border-radius: 10px;
+    }}
 
     QPushButton#textButton {{
         background: transparent;

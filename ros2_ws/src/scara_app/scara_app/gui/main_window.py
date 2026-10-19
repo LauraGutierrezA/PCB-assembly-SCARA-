@@ -10,30 +10,41 @@ Estructura:
   │                                               │
   └───────────────────────────────────────────────┘
 
+Dead-man switch: un solo objeto Deadman para toda la ventana (widgets.py).
+Las pestanas DK y Punto a punto tienen su boton "Mantener para mover"; la
+barra espaciadora hace lo mismo en esas pestanas (eventFilter). Al cambiar
+de pestana o al salir de la ventana, el dead-man se suelta.
+Al entrar a "Prueba de circuito" se borra la consigna del firmware
+("release"), para que el controlador no devuelva el motor a la consigna
+vieja despues de cada prueba.
+
 Para agregar una pestana nueva (p. ej. punto a punto):
   1. Crear gui/point_to_point_tab.py con una clase QWidget que reciba ros_node.
   2. Agregarla en _build_tabs() con self.tabs.addTab(...).
 Los estilos salen de theme.py (objectName de cada widget).
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import (
-    QFrame, QHBoxLayout, QLabel, QMainWindow, QShortcut, QTabWidget,
+    QApplication, QFrame, QHBoxLayout, QLabel, QMainWindow, QShortcut, QTabWidget,
     QVBoxLayout, QWidget,
 )
 
 from . import theme
 from .homing_tab import HomingTab
 from .point_to_point_tab import PointToPointTab
+from .dk_tab import DkTab
 from .circuit_test_tab import CircuitTestTab
+from .widgets import Deadman
 
 
 class MainWindow(QMainWindow):
     def __init__(self, ros_node):
         super().__init__()
         self.node = ros_node
+        self.deadman = Deadman(ros_node, self)
         self.setWindowTitle('SCARA RRP - Estacion 3')
-        self.resize(860, 680)
+        self.resize(1240, 820)
         self.setFont(theme.sans(10))
         self.setStyleSheet(theme.stylesheet())
 
@@ -60,9 +71,15 @@ class MainWindow(QMainWindow):
         page_layout.addWidget(card)
         self.setCentralWidget(page)
 
-        # Esc = STOP desde cualquier parte de la ventana
-        QShortcut(QKeySequence(Qt.Key_Escape), self,
-                  activated=lambda: self.node.send_command('stop'))
+        # Esc = STOP desde cualquier parte de la ventana (suelta tambien el dead-man)
+        QShortcut(QKeySequence(Qt.Key_Escape), self, activated=self._emergency_stop)
+
+        # Barra espaciadora = dead-man en DK y Punto a punto
+        QApplication.instance().installEventFilter(self)
+        # Si la ventana pierde el foco (otra app, minimizar), se suelta
+        QApplication.instance().applicationStateChanged.connect(
+            lambda state: state == Qt.ApplicationActive or self.deadman.release_all())
+        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         self.node.signals.status_received.connect(self._on_status)
         self.node.signals.connection_changed.connect(self._on_connection)
@@ -71,8 +88,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _build_tabs(self):
         self.tabs.addTab(HomingTab(self.node), 'Homing')
-        self.tabs.addTab(PointToPointTab(self.node), 'Punto a punto')
-        self.tabs.addTab(CircuitTestTab(self.node), 'Prueba de circuito')
+        self.tabs.addTab(PointToPointTab(self.node, self.deadman), 'Punto a punto')
+        self.tabs.addTab(DkTab(self.node, self.deadman), 'DK')
+        self.circuit_tab = CircuitTestTab(self.node)
+        self.tabs.addTab(self.circuit_tab, 'Prueba de circuito')
         # Aqui iran: 'Jog', 'Caracterizacion', ...
 
     def _build_header(self):
@@ -106,6 +125,29 @@ class MainWindow(QMainWindow):
         right.addWidget(self.status_label)
         row.addLayout(right)
         return header
+
+    def _emergency_stop(self):
+        self.deadman.release_all()
+        self.node.send_command('stop')
+
+    def _on_tab_changed(self, _index):
+        self.deadman.release_all()
+        if self.tabs.currentWidget() is self.circuit_tab:
+            self.node.release_control()
+
+    def eventFilter(self, obj, event):
+        """Barra espaciadora como dead-man en las pestanas que tienen boton."""
+        if event.type() in (QEvent.KeyPress, QEvent.KeyRelease) and event.key() == Qt.Key_Space:
+            button = getattr(self.tabs.currentWidget(), 'deadman_button', None)
+            if button is None or not self.isActiveWindow():
+                return False
+            if not event.isAutoRepeat():
+                if event.type() == QEvent.KeyPress:
+                    button.press_space()
+                else:
+                    button.release_space()
+            return True     # que la barra no "haga clic" en el boton con foco
+        return super().eventFilter(obj, event)
 
     def _on_status(self, status):
         self.status_label.setText(status)

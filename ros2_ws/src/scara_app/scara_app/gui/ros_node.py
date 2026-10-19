@@ -8,6 +8,7 @@ un metodo/senal aqui.
 
 Topicos:
   /scara/cmd     (std_msgs/String)      PC -> ESP32   "start" | "stop" | "resume"
+                 | "release" (borra la consigna) | "dm1"/"dm0" (dead-man, ver robot_model.py)
   /scara/status  (std_msgs/String)      ESP32 -> PC   "IDLE", "HOMING M1 SEEK_L", ...
   /scara/target  (std_msgs/Float32MultiArray)  PC -> ESP32
                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]  (mm, av en mm/vuelta, codo +1/-1)
@@ -21,6 +22,8 @@ import time
 from PyQt5.QtCore import QObject, pyqtSignal
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
+
+from scara_app.robot_model import codo_for, fk_xy
 
 # Si no llega /scara/status en este tiempo, se considera desconectado.
 # El ESP32 publica un "latido" cada 1 s.
@@ -114,6 +117,30 @@ class ScaraGuiNode(Node):
         msg.data = cmd
         self._cmd_pub.publish(msg)
         self.get_logger().info(f'Comando enviado: {cmd}')
+
+    # ---------------- Dead-man switch ----------------
+    def deadman_beat(self):
+        """Latido del dead-man (cada DEADMAN_PERIOD_S mientras se mantiene). Sin log."""
+        self._publish_cmd_quiet('dm1')
+
+    def deadman_release(self):
+        """Dead-man suelto: el firmware detiene los motores de inmediato."""
+        self._publish_cmd_quiet('dm0')
+
+    def release_control(self):
+        """Borra la consigna en el firmware (al entrar a Prueba de circuito)."""
+        self.send_command('release')
+
+    def _publish_cmd_quiet(self, cmd: str):
+        msg = String()
+        msg.data = cmd
+        self._cmd_pub.publish(msg)
+
+    def send_joints(self, th1: float, th2: float, z: float, params: dict):
+        """Pestana DK: (th1, th2) en grados y z en mm -> consigna cartesiana.
+        La IK del firmware devuelve los mismos angulos (ver robot_model.py)."""
+        x, y = fk_xy(th1, th2, params['d1'], params['d2'])
+        self.send_target(x, y, z, params, codo_for(th2))
 
     def send_target(self, x: float, y: float, z: float, params: dict, codo: int = 1):
         """params: {'d1','d2','d3','d4','d5','d6','av'} en mm (av en mm/vuelta).
