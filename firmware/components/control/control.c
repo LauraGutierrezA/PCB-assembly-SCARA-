@@ -74,8 +74,16 @@ static const float CTRL_DEN[NUM_JOINTS][3] = {
  *   apenas se mueva. V_DEAD = (% / 100) * V_SUPPLY.  Ej: 15 %  ->  1.8 V
  * Con 0.0f no se compensa (como si no existiera esta parte).
  */
-static const float V_DEAD[NUM_JOINTS] = { 36.0f/100.0f*12.0f, 10.0f/100.0f*12.0f, 7.0f/100.0f*12.0f };
-#define DEAD_TOL_COUNTS   10      /* "llego" si esta a +-10 cuentas del objetivo */
+/* OJO: medido con el L298N. Con el TB6612 hay que volver a medirlo y
+ * poner aqui los valores nuevos. */
+static const float V_DEAD[NUM_JOINTS] = { 17.0f/100.0f*12.0f, 10.0f/100.0f*12.0f, 7.0f/100.0f*12.0f };
+
+/* Histeresis de "llego": entra con menos de DEAD_TOL_COUNTS de error y solo
+ * vuelve a empujar si se aleja mas de DEAD_OUT_COUNTS. Evita que el motor
+ * cabecee alrededor del objetivo (empujar - pasarse - empujar...). */
+#define DEAD_TOL_COUNTS   10      /* entra a "llego" con menos de 10 cuentas */
+#define DEAD_OUT_COUNTS   25      /* sale de "llego" solo si se aleja mas de 25 */
+static bool llego[NUM_JOINTS];    /* true: el motor ya llego y esta frenado */
 
 
 /* ============================================================
@@ -85,7 +93,7 @@ static const float V_DEAD[NUM_JOINTS] = { 36.0f/100.0f*12.0f, 10.0f/100.0f*12.0f
  * Ya no se configuran aqui (antes eran GEAR y HOME_RAD). El homingPRO
  * mide la relacion real cuentas <-> articulacion y el sentido de cada
  * encoder (components/homing_pro). Las relaciones nominales y los valores
- * de los finales (-90/+90 grados, 18/123 mm) estan en homing_pro.c.
+ * de los finales (-90/+90 grados, 19.3/126 mm) estan en homing_pro.c.
  */
 
 /* Radianes del EJE DEL MOTOR por cuenta del encoder (unidades de Gpos). */
@@ -120,6 +128,8 @@ void control_set_reference(const joints_t *r)
     ref = *r;
     has_ref = true;
     ref_seq++;
+    /* Consigna nueva: todos los motores vuelven a "no ha llegado" */
+    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
     portEXIT_CRITICAL(&ref_lock);
 }
 
@@ -143,42 +153,6 @@ static void clear_reference(void)
     portENTER_CRITICAL(&ref_lock);
     has_ref = false;
     portEXIT_CRITICAL(&ref_lock);
-}
-
-void control_release(void)
-{
-    clear_reference();
-}
-
-
-/* ============================================================
- *                 DEAD-MAN SWITCH (hold-to-run)
- * ============================================================
- * Lo escribe micro-ROS (nucleo 0) y lo lee el control (nucleo 1). Son
- * variables de 32 bits: leerlas/escribirlas es atomico en el ESP32.
- */
-static volatile bool       dm_held = false;
-static volatile TickType_t dm_last = 0;
-
-void control_deadman_beat(void)
-{
-    dm_last = xTaskGetTickCount();
-    dm_held = true;
-}
-
-void control_deadman_release(void)
-{
-    dm_held = false;
-}
-
-static bool deadman_ok(void)
-{
-    if (!dm_held) return false;
-    if ((xTaskGetTickCount() - dm_last) >= pdMS_TO_TICKS(DEADMAN_TIMEOUT_MS)) {
-        dm_held = false;          /* se perdio el latido: soltar */
-        return false;
-    }
-    return true;
 }
 
 
@@ -257,6 +231,7 @@ static void reset_controladores(void)
 {
     for (int i = 0; i < NUM_JOINTS; i++) {
         mem[i] = (ctrl_mem_t){ 0.0f, 0.0f, 0.0f, 0.0f };
+        llego[i] = false;
     }
 }
 
@@ -283,10 +258,19 @@ static float controlador(int i, float e)
  * ============================================================
  * u > 0 -> (IN1, IN2) = (1, 0)   (mismo sentido que SEEK_L del homing)
  * u < 0 -> (IN1, IN2) = (0, 1)
+ * u = 0 -> FRENO ACTIVO: (IN1, IN2) = (1, 1) con PWM al maximo. Asi frena
+ *          con el TB6612 y tambien con drivers que dejan el motor suelto
+ *          cuando el PWM esta en 0 (p. ej. L298N).
  * La magnitud |u| / V_SUPPLY se vuelve duty de 10 bits.
  */
 static void escribir_actuador(int i, float u)
 {
+    if (u == 0.0f) {
+        motor_brake(i);
+        motor_set_duty(i, (uint32_t)PWM_MAX);
+        return;
+    }
+
     float duty = limitar(u, -U_MAX_V, U_MAX_V) / V_SUPPLY * PWM_MAX;
 
     if (duty >= 0.0f) {
@@ -310,12 +294,21 @@ static void control_step(const joints_t *r)
         float e = error_motor_rad(i, joint_of(r, i));
         float u = controlador(i, e);
 
-        /* 1. Zona muerta: si aun no llega, empujar al menos V_DEAD;
-         *    si ya llego, salida 0 para que no vibre. */
-        if (fabsf(e) > (float)DEAD_TOL_COUNTS * MOTOR_RAD_PER_COUNT) {
-            u = limitar(u + signo(u) * V_DEAD[i], -U_MAX_V, U_MAX_V);
-        } else {
+        /* 1. Zona muerta con histeresis:
+         *    - si aun no llega: empujar al menos V_DEAD
+         *    - si ya llego: salida 0 (freno) hasta que se aleje mas de
+         *      DEAD_OUT_COUNTS. */
+        const float err_cts = fabsf(e) / MOTOR_RAD_PER_COUNT;
+        if (llego[i]) {
+            if (err_cts > (float)DEAD_OUT_COUNTS) llego[i] = false;
+        } else if (err_cts <= (float)DEAD_TOL_COUNTS) {
+            llego[i] = true;
+        }
+
+        if (llego[i]) {
             u = 0.0f;
+        } else {
+            u = limitar(u + signo(u) * V_DEAD[i], -U_MAX_V, U_MAX_V);
         }
 
         /* 2. Finales de carrera: si el motor esta tocando el final hacia
@@ -355,12 +348,10 @@ void control_update(void)
     }
     homed_before = homed;
 
-    /* 2. Solo se controla con homing hecho, con consigna, sin una
-     *    prueba de circuito corriendo (si no, se pelearian los motores) y
-     *    con el dead-man presionado. */
+    /* 2. Solo se controla con homing hecho, con consigna y sin una
+     *    prueba de circuito corriendo (si no, se pelearian los motores). */
     joints_t r;
-    if (!homed || !control_get_reference(&r) || any_motor_test_running() ||
-        !deadman_ok()) {
+    if (!homed || !control_get_reference(&r) || any_motor_test_running()) {
         if (active) {
             /* Se deja de controlar: soltar motores y olvidar la memoria */
             if (homed) motors_stop_all();
