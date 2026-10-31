@@ -22,7 +22,7 @@ import math
 #   z:   M3_BOTTOM_MM .. M3_TOP_MM
 # Si cambias los finales alla (recalibracion), cambialos tambien aqui.
 JOINT_LIMITS = {
-    'th1': (-72.0, 72.0),    # grados (M1_L_DEG, M1_R_DEG)
+    'th1': (-85.0, 85.0),    # grados (M1_L_DEG, M1_R_DEG)
     'th2': (-90.0, 90.0),    # grados
     'z':   (19.3, 126.0),    # mm sobre el piso de la base
 }
