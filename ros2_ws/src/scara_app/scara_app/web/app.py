@@ -35,6 +35,7 @@ from .circuit_test_tab import CircuitTestTab
 from .dk_tab import DkTab
 from .homing_tab import HomingTab
 from .point_to_point_tab import PointToPointTab
+from .trajectory_tab import TrajectoryTab   # TRAYECTORIA
 from .widgets import Hub, button, caps_label
 
 POLL_PERIOD_S = 0.05   # cada cuanto la pagina revisa eventos nuevos del nodo
@@ -43,6 +44,7 @@ TABS = [
     ('homing', 'Homing', HomingTab),
     ('p2p', 'Punto a punto', PointToPointTab),
     ('dk', 'DK', DkTab),
+    ('traj', 'Trayectoria', TrajectoryTab),   # TRAYECTORIA
     ('circuit', 'Prueba de circuito', CircuitTestTab),
     # Aqui iran: 'Jog', 'Caracterizacion', ...
 ]
@@ -90,6 +92,9 @@ def build_ui(node):
             release_deadman()
             node.deadman_release()
             name = getattr(e.value, '_props', {}).get('name', e.value)
+            for page in pages.values():          # TRAYECTORIA: aborta el ciclo
+                if hasattr(page, 'on_tab_change'):
+                    page.on_tab_change(name)
             if name == 'circuit':
                 node.release_control()
         tabs.on_value_change(on_tab_change)

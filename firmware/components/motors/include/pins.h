@@ -73,4 +73,12 @@
     #define PIN_ENC3_A    32
     #define PIN_ENC3_B    33
 
+    /* ---------- Efector final (TRAYECTORIA) ---------- */
+    /* Servo de giro Tower Pro 9 g: senal PWM 50 Hz (alimentarlo a 5 V aparte,
+     * GND comun con el ESP32). */
+    #define PIN_SERVO     16
+    /* Bomba de vacio via MOSFET/rele. GPIO 12 es pin de arranque: debe
+     * estar en BAJO al encender -> pull-down de 10k en la compuerta. */
+    #define PIN_VACUUM    12
+
 #endif /* PINS_H */

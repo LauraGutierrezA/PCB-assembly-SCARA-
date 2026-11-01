@@ -122,6 +122,25 @@ class ScaraWebNode(Node):
         el control (el firmware borra la consigna y suelta el dead-man)."""
         self.send_command('stop')
         self.test_stop(None)
+        self._push('estop', None)   # TRAYECTORIA: las pestanas abortan
+
+    # ---------------- Trayectoria (TRAYECTORIA) ----------------
+    def stream_target(self, x: float, y: float, z: float, params: dict, codo: int = 1):
+        """Como send_target pero SIN log: la pestana Trayectoria manda ~20 por segundo."""
+        msg = Float32MultiArray()
+        msg.data = [float(v) for v in (x, y, z,
+                    params['d1'], params['d2'], params['d3'],
+                    params['d4'], params['d5'], params['d6'], params['av'],
+                    1 if codo >= 0 else -1)]
+        self._target_pub.publish(msg)
+
+    def vacuum(self, on: bool):
+        """Bomba de la ventosa: PICK -> True, PLACE -> False."""
+        self.send_command('vac1' if on else 'vac0')
+
+    def rotate(self, delta_deg: int):
+        """Servo de la boquilla: giro relativo de +90 o -90 grados."""
+        self.send_command(f'rot {int(delta_deg):+d}')
 
     def _send_test(self, text: str):
         msg = String()

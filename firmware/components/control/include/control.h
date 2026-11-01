@@ -71,4 +71,8 @@ void control_update(void);
  * rad; th3 en mm desde el piso). Vale 0 antes del homingPRO. */
 void control_get_position(joints_t *pos);
 
+/* TRAYECTORIA: true si hay consigna y los 3 motores ya llegaron a ella
+ * (misma histeresis "llego" del lazo). Se publica como ARR en /scara/limits. */
+bool control_arrived(void);
+
 #endif /* CONTROL_H */

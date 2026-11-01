@@ -411,3 +411,16 @@ void control_update(void)
         tick = 0;
     }
 }
+
+
+/* ============================================================
+ *        TRAYECTORIA: el robot llego a la consigna
+ * ============================================================ */
+bool control_arrived(void)
+{
+    bool ok;
+    portENTER_CRITICAL(&ref_lock);
+    ok = has_ref && llego[0] && llego[1] && llego[2];
+    portEXIT_CRITICAL(&ref_lock);
+    return ok;
+}

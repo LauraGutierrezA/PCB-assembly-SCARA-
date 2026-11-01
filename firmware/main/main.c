@@ -91,6 +91,7 @@
 #include "control.h"
 #include "encoders.h"
 #include "motor_test.h"
+#include "effector.h"          /* TRAYECTORIA: ventosa + servo */
 
 /* ---------------- Parametros ---------------- */
 #define STATUS_PERIOD_MS      100     /* cada cuanto se revisa si publicar */
@@ -173,6 +174,8 @@ static bool cmd_is(const std_msgs__msg__String *m, const char *word)
 static void cmd_callback(const void *msgin)
 {
     const std_msgs__msg__String *m = (const std_msgs__msg__String *)msgin;
+    /* TRAYECTORIA: "vac1", "vac0", "rot +90", "rot -90" (y "stop" apaga la bomba) */
+    if (effector_handle_cmd(m->data.data, m->data.size)) return;
     if (cmd_is(m, "start")) {
         homing_pro_start();
     } else if (cmd_is(m, "resume")) {
@@ -300,6 +303,13 @@ static void limits_publish_tick(void)
              (homing_pro_calibrated(0) && homing_pro_calibrated(1) &&
               homing_pro_calibrated(2)) ? 1 : 0);
 
+    /* TRAYECTORIA: llego (ARR), bomba (VAC) y angulo del servo (Q4) */
+    {
+        size_t len_ = strlen(limits_buf);
+        snprintf(limits_buf + len_, sizeof(limits_buf) - len_,
+                 " ARR=%d VAC=%d Q4=%d", control_arrived() ? 1 : 0,
+                 effector_vacuum_on() ? 1 : 0, effector_servo_deg());
+    }
     TickType_t now = xTaskGetTickCount();
     if (strcmp(limits_buf, limits_last) == 0 &&
         (now - limits_last_pub) < pdMS_TO_TICKS(HEARTBEAT_MS)) {
@@ -448,6 +458,7 @@ void app_main(void)
 {
     motors_init();
     encoders_init();
+    effector_init();          /* TRAYECTORIA */
 
 #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
     rmw_uros_set_custom_transport(
