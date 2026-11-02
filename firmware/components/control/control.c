@@ -7,6 +7,8 @@
  * La diferencia es que aqui hay 3 lazos independientes, uno por motor.
  */
 #include "control.h"
+
+#if !CONTROL_USE_RST   /* ---- PD: solo si el selector de control.h = 0 ---- */
 #include <math.h>
 #include "encoders.h"
 #include "motors.h"
@@ -424,3 +426,5 @@ bool control_arrived(void)
     portEXIT_CRITICAL(&ref_lock);
     return ok;
 }
+
+#endif /* !CONTROL_USE_RST */

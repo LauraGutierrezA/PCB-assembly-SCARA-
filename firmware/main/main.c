@@ -10,14 +10,17 @@
  *                            como referencia)
  *   components/kinematics -> cinematica directa e inversa (ik.c)
  *   components/encoders   -> lectura de los 3 encoders (PCNT, x4)
- *   components/control    -> referencias articulares y lazo de control (3 PD)
+ *   components/control    -> referencias articulares y lazo de control:
+ *                            control.c    = 3 PD de posicion
+ *                            controlRST.c = 3 RST en cascada (vel. + pos.)
+ *                            Se elige con CONTROL_USE_RST (ver abajo).
  * Los parametros del robot (d1..d6, av) llegan desde la interfaz con cada
  * consigna.
  *
  * Dos tareas:
  *   - control_task   (nucleo 1, cada CONTROL_LOOP_MS = 8 ms): homing, prueba
- *                    de circuito y control. El controlador de cada motor
- *                    corre cada CONTROL_TS_MS = 32 ms (Ts del diseno).
+ *                    de circuito y control. PD: corre cada CONTROL_TS_MS
+ *                    = 32 ms. RST: interno y externo cada 8 ms.
  *                    No depende de micro-ROS: si la USB se cae, sigue corriendo.
  *   - micro_ros_task (nucleo 0): comunicacion con ROS 2. Espera al agente
  *                    solo (no hay que presionar EN). Si el agente se pierde,
@@ -92,6 +95,21 @@
 #include "encoders.h"
 #include "motor_test.h"
 #include "effector.h"          /* TRAYECTORIA: ventosa + servo */
+
+/* ================================================================
+ *  "BOTON" DEL CONTROLADOR (IK, consignas y trayectorias)
+ * ================================================================
+ * Se cambia en components/control/include/control.h:
+ *     #define CONTROL_USE_RST   0   -> PD           (control.c)
+ *     #define CONTROL_USE_RST   1   -> RST cascada  (controlRST.c)
+ * Esta en control.h (y no aqui) porque control.c / controlRST.c se
+ * compilan aparte y tambien tienen que verlo. El homing no usa el
+ * controlador, asi que no cambia. Al compilar se imprime cual quedo. */
+#if CONTROL_USE_RST
+#pragma message "SCARA: controlador = RST en cascada (controlRST.c)"
+#else
+#pragma message "SCARA: controlador = PD (control.c)"
+#endif
 
 /* ---------------- Parametros ---------------- */
 #define STATUS_PERIOD_MS      100     /* cada cuanto se revisa si publicar */
@@ -182,7 +200,7 @@ static void cmd_callback(const void *msgin)
         homing_pro_resume();
     } else if (cmd_is(m, "stop")) {
         homing_pro_abort();
-        control_release();          /* si no, el PD volvia a la consigna */
+        control_release();          /* si no, el control volvia a la consigna */
         control_deadman_release();
     } else if (cmd_is(m, "dm1")) {
         control_deadman_beat();

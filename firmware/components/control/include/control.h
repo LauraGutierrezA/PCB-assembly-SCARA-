@@ -33,6 +33,20 @@
 #include <stdint.h>
 #include "ik.h"
 
+/* ============================================================
+ *   SELECTOR DE CONTROLADOR  ("boton": 0 = PD, 1 = RST cascada)
+ * ============================================================
+ *   0 -> control.c     : 3 PD de posicion (Ts = CONTROL_TS_MS)
+ *   1 -> controlRST.c  : 3 RST en cascada
+ *                        interno velocidad (incremental, Ts = CONTROL_LOOP_MS)
+ *                        externo posicion  (posicional,  Ts = 8 ms tambien,
+ *                                           ver RST_OUT_EVERY en controlRST.c)
+ * Los dos archivos implementan esta misma API, asi que main.c (IK,
+ * trayectorias, dead-man...) no cambia. Solo se compila el elegido.
+ * Cambiar el valor y volver a compilar/flashear (idf.py build flash).
+ */
+#define CONTROL_USE_RST   1
+
 /* Periodo de la tarea de control (homing, prueba de circuito, control). */
 #define CONTROL_LOOP_MS   8
 
