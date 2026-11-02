@@ -20,7 +20,8 @@ from nicegui import ui
 
 from scara_app.gui import theme as t
 from scara_app.robot_model import (
-    D3_BASE, JOINT_LIMITS, PLAN_VIEW, SINGULAR_DEG, Z_TOP, fk_full, hex_rgb, zone_rgba,
+    D3_BASE, JOINT_LIMITS, PLAN_VIEW, PLAN_Y_DIR, PLAN_Y_LEFT_EDGE, PLAN_Y_RIGHT_EDGE,
+    SINGULAR_DEG, Y_SIGN_3D, Z_TOP, fk_full, hex_rgb, zone_rgba,
 )
 
 from . import theme as wt
@@ -38,13 +39,15 @@ def _plan_transform():
             (PLAN_H - _M['t'] - _M['b']) / (v['xmax'] - v['xmin']))
     ox = _M['l'] + ((PLAN_W - _M['l'] - _M['r']) - (v['ymax'] - v['ymin']) * s) / 2
     oy = _M['t']
-    return s, (lambda y: ox + (v['ymax'] - y) * s), (lambda x: oy + (v['xmax'] - x) * s), ox, oy
+    return (s, (lambda y: ox + (y - PLAN_Y_LEFT_EDGE) * PLAN_Y_DIR * s),
+            (lambda x: oy + (v['xmax'] - x) * s), ox, oy)
 
 
 def plan_to_mm(px, py):
     """Coordenadas del viewBox -> (x, y) en mm."""
     s, _, _, ox, oy = _plan_transform()
-    return PLAN_VIEW['xmax'] - (py - oy) / s, PLAN_VIEW['ymax'] - (px - ox) / s
+    return (PLAN_VIEW['xmax'] - (py - oy) / s,
+            PLAN_Y_LEFT_EDGE + PLAN_Y_DIR * (px - ox) / s)
 
 
 _zone_cache = {}
@@ -72,7 +75,8 @@ def plan_background_svg(d1, d2):
     o = []
     for val in range(int(v['xmin']), int(v['xmax']) + 1, 10):
         strong = val % 50 == 0
-        o.append(f'<line x1="{sx(v["ymax"]):.1f}" y1="{sy(val):.1f}" x2="{sx(v["ymin"]):.1f}" '
+        o.append(f'<line x1="{sx(PLAN_Y_LEFT_EDGE):.1f}" y1="{sy(val):.1f}" '
+                 f'x2="{sx(PLAN_Y_RIGHT_EDGE):.1f}" '
                  f'y2="{sy(val):.1f}" stroke="{t.BORDER_CARD if strong else t.DIVIDER}" '
                  f'opacity="{0.9 if strong else 0.55}"/>')
     for val in range(int(v['ymin']), int(v['ymax']) + 1, 10):
@@ -81,12 +85,13 @@ def plan_background_svg(d1, d2):
                  f'y2="{sy(v["xmin"]):.1f}" stroke="{t.BORDER_CARD if strong else t.DIVIDER}" '
                  f'opacity="{0.9 if strong else 0.55}"/>')
     zw, zh = (v['ymax'] - v['ymin']) * s, (v['xmax'] - v['xmin']) * s
-    o.append(f'<image href="{_zone_data_uri(d1, d2)}" x="{sx(v["ymax"]):.1f}" '
+    o.append(f'<image href="{_zone_data_uri(d1, d2)}" x="{sx(PLAN_Y_LEFT_EDGE):.1f}" '
              f'y="{sy(v["xmax"]):.1f}" width="{zw:.1f}" height="{zh:.1f}" '
              f'preserveAspectRatio="none"/>')
     font = f'font-family=\'{wt.MONO}\' font-size="11" fill="{t.TEXT_MUTED}"'
     for val in range(-50, int(v['xmax']) + 1, 50):
-        o.append(f'<text x="{sx(v["ymax"]) - 5:.1f}" y="{sy(val) + 4:.1f}" text-anchor="end" '
+        o.append(f'<text x="{sx(PLAN_Y_LEFT_EDGE) - 5:.1f}" y="{sy(val) + 4:.1f}" '
+                 f'text-anchor="end" '
                  f'{font}>{val}</text>')
     for val in range(-200, 201, 100):
         o.append(f'<text x="{sx(val):.1f}" y="{sy(v["xmin"]) + 15:.1f}" text-anchor="middle" '
@@ -104,9 +109,9 @@ def plan_background_svg(d1, d2):
     lbl = f'font-family=\'{wt.MONO}\' font-size="13" font-weight="700" fill="{t.TEXT}"'
     o.append(f'<text x="{sx(0) + 6:.1f}" y="{sy(230) + 4:.1f}" {lbl}>x₀</text>')
     o.append(f'<text x="{sx(232):.1f}" y="{sy(0) - 8:.1f}" text-anchor="end" {lbl}>y₀</text>')
-    o.append(f'<clipPath id="planclip"><rect x="{sx(v["ymax"]):.1f}" y="{sy(v["xmax"]):.1f}" '
+    o.append(f'<clipPath id="planclip"><rect x="{sx(PLAN_Y_LEFT_EDGE):.1f}" y="{sy(v["xmax"]):.1f}" '
              f'width="{zw:.1f}" height="{zh:.1f}"/></clipPath>')
-    o.append(f'<rect x="{sx(45):.1f}" y="{sy(35):.1f}" width="{90 * s:.1f}" '
+    o.append(f'<rect x="{min(sx(45), sx(-45)):.1f}" y="{sy(35):.1f}" width="{90 * s:.1f}" '
              f'height="{160 * s:.1f}" fill="none" stroke="{t.TEXT_MUTED}" opacity=".7" '
              f'clip-path="url(#planclip)"/>')
     return _svg(''.join(o))
@@ -226,8 +231,8 @@ class Robot3D:
                                           for a, b in zip(self._last, (th1, th2, z))):
             return
         self._last = (th1, th2, z)
-        self.g1.rotate(0, 0, math.radians(th1))
-        self.g2.rotate(0, 0, math.radians(th2))
+        self.g1.rotate(0, 0, math.radians(Y_SIGN_3D * th1))      # imagen en espejo si el robot
+        self.g2.rotate(0, 0, math.radians(Y_SIGN_3D * th2))      # real gira al reves
         self.tool.move(self.d2, 0, z - Z_TOP)
 
     def show(self, visible):
@@ -288,7 +293,8 @@ class Twin:
                 c = t.BORDER_CARD if v % 100 == 0 else t.DIVIDER
                 sc.line([v, -240, 0], [v, 240, 0]).material(c)
                 sc.line([-240, v, 0], [240, v, 0]).material(c)
-            for end, name in (([250, 0, 0], 'x₀'), ([0, 250, 0], 'y₀'), ([0, 0, 250], 'z₀')):
+            for end, name in (([250, 0, 0], 'x₀'), ([0, 250 * Y_SIGN_3D, 0], 'y₀'),
+                              ([0, 0, 250], 'z₀')):
                 sc.line([0, 0, 0], end).material(t.TEXT)
                 sc.text(name, f'color:{t.TEXT};font:600 13px monospace').move(
                     *[c * 1.05 for c in end])
@@ -302,7 +308,7 @@ class Twin:
                 while b <= b_hi + 1e-6:
                     _, _, x, y = fk_full(a, b, self.d1, self.d2)
                     for z in (Z_LO, Z_HI):
-                        pts.append([x, y, z])
+                        pts.append([x, Y_SIGN_3D * y, z])
                         cols.append(warn if abs(b) < SINGULAR_DEG else acc)
                     b += 3
                 a += 3

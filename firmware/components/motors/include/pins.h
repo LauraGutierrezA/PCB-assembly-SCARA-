@@ -75,10 +75,11 @@
 
     /* ---------- Efector final (TRAYECTORIA) ---------- */
     /* Servo de giro Tower Pro 9 g: senal PWM 50 Hz (alimentarlo a 5 V aparte,
-     * GND comun con el ESP32). */
-    #define PIN_SERVO     16
-    /* Bomba de vacio via MOSFET/rele. GPIO 12 es pin de arranque: debe
-     * estar en BAJO al encender -> pull-down de 10k en la compuerta. */
-    #define PIN_VACUUM    12
+     * GND comun con el ESP32). GPIO 2 es pin de arranque: debe estar en
+     * bajo/flotante al flashear (si falla el flasheo, desconectar la senal). */
+    #define PIN_SERVO     2
+    /* Bomba de vacio via MOSFET/rele (con diodo flyback; nunca directo al GPIO).
+     * GPIO 16 no es pin de arranque; solo existe en modulos ESP32-WROOM. */
+    #define PIN_VACUUM    16
 
 #endif /* PINS_H */

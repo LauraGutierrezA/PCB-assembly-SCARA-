@@ -13,16 +13,26 @@ uno). La diferencia es COMO le avisa a la interfaz:
            abiertas varias pantallas a la vez.
 
 Eventos: ('status', (texto, cambio)), ('connection', bool),
-         ('ik', dict), ('limits', dict)
+         ('ik', dict), ('limits', dict),
+         ('wiimote', dict)             estado del control con Wiimote (~15 Hz, solo mientras
+                                       hay Wiimote o esta activado; ver wiimote_bridge.py)
+         ('wiimote_log', (texto, nivel))
+
+El control con Wiimote vive en self.wiimote (WiimoteBridge): UNA instancia en el
+nodo, no una por pantalla, asi varias paginas abiertas no mandan consignas duplicadas.
 """
 import threading
 import time
 from collections import deque
 
 from rclpy.node import Node
+from sensor_msgs.msg import Imu, Joy
 from std_msgs.msg import Float32MultiArray, String
 
+from scara_app.gui.point_to_point_tab import ROBOT_DEFAULTS
 from scara_app.robot_model import codo_for, fk_xy
+from scara_app.wiimote_bridge import WiimoteBridge
+from scara_app.wiimote_control import BUTTON_NAMES
 
 # Se reutilizan los parsers de la version de escritorio (un solo lugar).
 from scara_app.gui.ros_node import CONNECTION_TIMEOUT_S, parse_ik, parse_limits
@@ -50,6 +60,23 @@ class ScaraWebNode(Node):
         self._connected = False
         self._last_limits = {}
         self.create_timer(0.5, self._check_connection)
+
+        # Control con Wiimote (desactivado hasta activarlo en su pestana)
+        robot = dict(ROBOT_DEFAULTS)
+        self._wiimote_active = False
+        self._wiimote_cmd_pub = self.create_publisher(String, 'wiimote/cmd', 10)
+        self.wiimote = WiimoteBridge(
+            robot,
+            send_joints=lambda th1, th2, z: self.send_joints(th1, th2, z, robot),
+            deadman_beat=self.deadman_beat,
+            deadman_release=self.deadman_release,
+            emergency_stop=self.emergency_stop,
+            log=lambda text, level: self._push('wiimote_log', (text, level)),
+            on_state=self._on_wiimote_state,
+            calibrate=lambda: self._wiimote_cmd_pub.publish(String(data='calibrate')))
+        self.create_subscription(Joy, 'wiimote/joy', self._on_wiimote_joy, 10)
+        self.create_subscription(Imu, 'wiimote/imu', self._on_wiimote_imu, 10)
+        self.create_timer(0.02, self.wiimote.tick)
 
     # ---------------- Eventos para las paginas ----------------
     def _push(self, kind, payload):
@@ -117,11 +144,21 @@ class ScaraWebNode(Node):
     def test_stop(self, motor=None):
         self._send_test('stop all' if motor is None else f'stop {motor}')
 
+    def servo_set(self, degrees: float):
+        """Prueba de circuito: servo del efector (GPIO 2) al angulo dado, -90 a +90."""
+        self.send_command(f'servo {int(round(max(-90.0, min(90.0, degrees))))}')
+
+    def pump_set(self, on: bool):
+        """Prueba de circuito: enciende o apaga la bomba de vacio (GPIO 16)."""
+        self.send_command('vac1' if on else 'vac0')
+
     def emergency_stop(self):
         """Boton STOP del encabezado: detiene el homing, la prueba de circuito y
-        el control (el firmware borra la consigna y suelta el dead-man)."""
+        el control (el firmware borra la consigna y suelta el dead-man). Tambien
+        desactiva el control con Wiimote."""
         self.send_command('stop')
         self.test_stop(None)
+        self.wiimote.set_enabled(False)
         self._push('estop', None)   # TRAYECTORIA: las pestanas abortan
 
     # ---------------- Trayectoria (TRAYECTORIA) ----------------
@@ -159,12 +196,30 @@ class ScaraWebNode(Node):
         self._push('status', (msg.data, changed))
 
     def _on_ik(self, msg: String):
-        self._push('ik', parse_ik(msg.data))
+        result = parse_ik(msg.data)
+        self.wiimote.on_ik_result(result)
+        self._push('ik', result)
 
     def _on_limits(self, msg: String):
         data = parse_limits(msg.data)
         self._last_limits = data
+        self.wiimote.on_limits(data)
         self._push('limits', data)
+
+    def _on_wiimote_joy(self, msg: Joy):
+        self.wiimote.on_joy([name for name, v in zip(BUTTON_NAMES, msg.buttons) if v])
+
+    def _on_wiimote_imu(self, msg: Imu):
+        w = msg.angular_velocity
+        self.wiimote.on_imu(w.x, w.y, w.z)
+
+    def _on_wiimote_state(self, state):
+        """Solo se anuncia mientras hay Wiimote o esta activado (si no, la lista de
+        eventos se llenaria de estados que nadie mira)."""
+        active = state['enabled'] or state['link']
+        if active or self._wiimote_active:
+            self._push('wiimote', state)
+        self._wiimote_active = active
 
     def _check_connection(self):
         alive = (time.monotonic() - self._last_status_time) < CONNECTION_TIMEOUT_S

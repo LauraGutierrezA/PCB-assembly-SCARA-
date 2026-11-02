@@ -18,7 +18,8 @@ from PyQt5.QtGui import QColor, QImage, QPainter, QPainterPath, QPen, QPolygonF
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from scara_app.robot_model import (
-    JOINT_LIMITS, PLAN_VIEW, SINGULAR_DEG, fk_full, hex_rgb, zone_rgba,
+    JOINT_LIMITS, PLAN_VIEW, PLAN_Y_DIR, PLAN_Y_LEFT_EDGE, PLAN_Y_RIGHT_EDGE, SINGULAR_DEG,
+    fk_full, hex_rgb, zone_rgba,
 )
 
 from . import theme
@@ -63,14 +64,15 @@ class PlanView(QWidget):
 
     def _pt(self, x, y):
         s, ox, oy = self._transform()
-        return QPointF(ox + (PLAN_VIEW['ymax'] - y) * s, oy + (PLAN_VIEW['xmax'] - x) * s)
+        return QPointF(ox + (y - PLAN_Y_LEFT_EDGE) * PLAN_Y_DIR * s,
+                       oy + (PLAN_VIEW['xmax'] - x) * s)
 
     def mousePressEvent(self, event):
         if self.on_click is None or event.button() != Qt.LeftButton:
             return
         s, ox, oy = self._transform()
         x = PLAN_VIEW['xmax'] - (event.pos().y() - oy) / s
-        y = PLAN_VIEW['ymax'] - (event.pos().x() - ox) / s
+        y = PLAN_Y_LEFT_EDGE + PLAN_Y_DIR * (event.pos().x() - ox) / s
         self.on_click(round(x, 1), round(y, 1))
 
     # ---------------- Dibujo ----------------
@@ -94,14 +96,15 @@ class PlanView(QWidget):
             p.drawLine(self._pt(v['xmax'], val), self._pt(v['xmin'], val))
 
         # Zona alcanzable
-        area = QRectF(self._pt(v['xmax'], v['ymax']), self._pt(v['xmin'], v['ymin']))
+        area = QRectF(self._pt(v['xmax'], PLAN_Y_LEFT_EDGE),
+                      self._pt(v['xmin'], PLAN_Y_RIGHT_EDGE))
         p.drawImage(area, self._zone)
 
         # Cotas
         p.setFont(theme.mono(8))
         p.setPen(QColor(theme.TEXT_MUTED))
         for val in range(-50, int(v['xmax']) + 1, 50):
-            pt = self._pt(val, v['ymax'])
+            pt = self._pt(val, PLAN_Y_LEFT_EDGE)
             p.drawText(QRectF(pt.x() - 40, pt.y() - 8, 35, 16), Qt.AlignRight | Qt.AlignVCenter,
                        str(val))
         for val in range(-200, 201, 100):
@@ -128,7 +131,7 @@ class PlanView(QWidget):
         p.setClipRect(area)
         p.setPen(QPen(_color(theme.TEXT_MUTED, 0.7), 1))
         p.setBrush(Qt.NoBrush)
-        p.drawRect(QRectF(self._pt(35, 45), self._pt(-125, -45)))
+        p.drawRect(QRectF(self._pt(35, 45), self._pt(-125, -45)).normalized())
         p.restore()
 
         width = max(8.0, 12 * s)

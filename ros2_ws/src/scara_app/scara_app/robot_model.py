@@ -56,8 +56,16 @@ D4_LINK = 60.0           # inferior eslabon 1 -> superior eslabon 2
 D5_LINK = 30.0           # espesor eslabon 2
 Z_TOP = D3_BASE + D4_LINK - D5_LINK     # 202: altura de la punta con d6 = 0
 
-# Vista en planta (mm): x0 hacia arriba, y0 hacia la izquierda (igual al HTML)
+# Vista en planta (mm): x0 hacia arriba. y0 hacia la DERECHA si PLAN_Y_RIGHT (el robot real gira
+# su th1 positivo hacia ese lado, asi que el gemelo es su imagen); hacia la izquierda si es False
+# (como el HTML original). Cambiar solo esta constante invierte el gemelo (planta y 3D) y los
+# botones izquierda / derecha del Wiimote.
+PLAN_Y_RIGHT = True
 PLAN_VIEW = {'xmin': -90.0, 'xmax': 240.0, 'ymin': -240.0, 'ymax': 240.0}
+PLAN_Y_LEFT_EDGE = PLAN_VIEW['ymin'] if PLAN_Y_RIGHT else PLAN_VIEW['ymax']    # y en el borde izq.
+PLAN_Y_RIGHT_EDGE = PLAN_VIEW['ymax'] if PLAN_Y_RIGHT else PLAN_VIEW['ymin']   # y en el borde der.
+PLAN_Y_DIR = 1.0 if PLAN_Y_RIGHT else -1.0    # +1: y crece hacia la derecha de la pantalla
+Y_SIGN_3D = -1.0 if PLAN_Y_RIGHT else 1.0     # espejo en la escena 3D (eje y y angulos)
 SINGULAR_DEG = 5.0       # |th2| menor que esto: cerca de singularidad
 
 
@@ -89,7 +97,8 @@ def in_limits(q):
 
 def zone_rgba(px_per_mm, d1, d2, accent_rgb, warn_rgb):
     """Imagen RGBA (numpy uint8, alto x ancho) de la zona alcanzable en planta,
-    con los limites de JOINT_LIMITS. Fila 0 = xmax (arriba), columna 0 = ymax (izq.)."""
+    con los limites de JOINT_LIMITS. Fila 0 = xmax (arriba), columna 0 = borde izquierdo
+    (PLAN_Y_LEFT_EDGE)."""
     import numpy as np
     v = PLAN_VIEW
     w = int(round((v['ymax'] - v['ymin']) * px_per_mm))
@@ -116,6 +125,8 @@ def zone_rgba(px_per_mm, d1, d2, accent_rgb, warn_rgb):
     img[norm, 3] = (255 * (0.07 + 0.16 * best[norm])).astype(np.uint8)
     img[sing, :3] = warn_rgb
     img[sing, 3] = 120
+    if PLAN_Y_RIGHT:                 # se genero con ymax a la izquierda: se invierten las columnas
+        img = np.ascontiguousarray(img[:, ::-1])
     return img
 
 

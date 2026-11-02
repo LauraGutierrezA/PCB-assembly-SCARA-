@@ -17,6 +17,9 @@ mientras se mantiene el boton de DK / Punto a punto o la barra espaciadora.
 Aqui se pasan al ESP32 ("dm1" / "dm0"). Al empezar a mantener, la pestana
 manda primero su consigna (on_deadman_start). Al cambiar de pestana se
 suelta. Al entrar a "Prueba de circuito" se borra la consigna del firmware.
+La pestana "Wiimote" tiene su propio dead-man (el boton B del Wiimote, que esta
+en el PC, no en el navegador; ver wiimote_bridge.py): el control con Wiimote se
+desactiva al salir de esa pestana, al cerrarse la pagina y con STOP / Esc.
 
 Cada pantalla que abre la pagina (iPad, PC, celular) tiene su propia copia
 de la interfaz; todas mandan los comandos al mismo nodo ROS 2.
@@ -37,6 +40,7 @@ from .homing_tab import HomingTab
 from .point_to_point_tab import PointToPointTab
 from .trajectory_tab import TrajectoryTab   # TRAYECTORIA
 from .widgets import Hub, button, caps_label
+from .wiimote_tab import WiimoteTab
 
 POLL_PERIOD_S = 0.05   # cada cuanto la pagina revisa eventos nuevos del nodo
 
@@ -46,6 +50,7 @@ TABS = [
     ('dk', 'DK', DkTab),
     ('traj', 'Trayectoria', TrajectoryTab),   # TRAYECTORIA
     ('circuit', 'Prueba de circuito', CircuitTestTab),
+    ('wiimote', 'Wiimote', WiimoteTab),
     # Aqui iran: 'Jog', 'Caracterizacion', ...
 ]
 
@@ -88,6 +93,12 @@ def build_ui(node):
                     page.set_held(held)
         ui.on('deadman', on_deadman)
 
+        current = {'tab': TABS[0][0]}      # pestana que esta viendo ESTA pagina
+
+        def disarm_wiimote_if_viewing():
+            if current['tab'] == 'wiimote':
+                node.wiimote.set_enabled(False)
+
         def on_tab_change(e):
             release_deadman()
             node.deadman_release()
@@ -95,9 +106,18 @@ def build_ui(node):
             for page in pages.values():          # TRAYECTORIA: aborta el ciclo
                 if hasattr(page, 'on_tab_change'):
                     page.on_tab_change(name)
+            if name != 'wiimote':
+                disarm_wiimote_if_viewing()
+            current['tab'] = name
             if name == 'circuit':
                 node.release_control()
         tabs.on_value_change(on_tab_change)
+
+        # Si se cierra o se duerme esta pantalla en la pestana Wiimote, se desactiva.
+        try:
+            ui.context.client.on_disconnect(disarm_wiimote_if_viewing)
+        except AttributeError:
+            pass
 
         # Esc = STOP (si hay teclado), tambien escribiendo en un campo
         def on_key(e):

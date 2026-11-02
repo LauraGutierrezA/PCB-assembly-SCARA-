@@ -6,6 +6,8 @@ encoder y accionamiento. Para que quepa en el iPad, cada modulo es mas
 compacto: end-stops y encoder van en la misma fila, y sentido y duracion
 tambien.
 
+Mas el servo (GPIO 2) y la bomba de vacio (GPIO 16), como en gui/circuit_test_tab.py.
+
 Constantes (velocidades, nombres de los finales, unidades) importadas de la
 version de escritorio.
 """
@@ -13,6 +15,7 @@ from nicegui import ui
 
 from scara_app.gui.circuit_test_tab import (
     DEFAULT_DURATION_S, DEFAULT_SPEED_PCT, END_STOP_NAMES, NUM_MOTORS, POSITION_UNITS,
+    SERVO_DEFAULT_DEG, SERVO_MAX_DEG, SERVO_MIN_DEG, SERVO_PRESETS,
 )
 
 from .widgets import SegmentedToggle, button, caps_label, number_box, read_number
@@ -106,6 +109,77 @@ class MotorModule:
         self.btn_start.set_enabled(enabled)
 
 
+class ServoModule:
+    """Servo en GPIO 2: slider -90..+90 (se manda al soltar), atajos y Enviar."""
+
+    def __init__(self, node):
+        self.node = node
+        with ui.element('div').classes('panel'):
+            with ui.element('div').classes('panel-head'):
+                ui.label('SERVO  (GPIO 2)').classes('panel-title')
+                self.state_label = ui.label('—').classes('caps')
+            caps_label('Angulo')
+            with ui.element('div').classes('speed-row'):
+                self.slider = (ui.slider(min=SERVO_MIN_DEG, max=SERVO_MAX_DEG, step=1, value=SERVO_DEFAULT_DEG)
+                               .props('thumb-size=28px track-size=6px')
+                               .classes('slider grow')
+                               .on('change', lambda _e: self._send()))
+                ui.label().classes('speed-value').bind_text_from(
+                    self.slider, 'value', lambda v: f'{int(v)}°')
+            with ui.element('div').classes('btn-row'):
+                for deg in SERVO_PRESETS:
+                    button(f'{deg}°', 'secondary', lambda _e=None, d=deg: self._go(d))
+                self.btn_send = button('Enviar', 'primary', self._send)
+
+    def _go(self, deg):
+        self.slider.set_value(deg)
+        self._send()
+
+    def _send(self):
+        self.node.servo_set(float(self.slider.value))
+
+    def set_state(self, angle):
+        if angle is None:
+            self.state_label.set_text('—')
+            self.state_label.style('')
+        else:
+            self.state_label.set_text(f'EN {int(round(angle))}°')
+            self.state_label.style('color: var(--scara-accent)')
+
+    def set_enabled(self, enabled):
+        self.btn_send.set_enabled(enabled)
+
+
+class PumpModule:
+    """Bomba de vacio en GPIO 16: Encender / Apagar."""
+
+    def __init__(self, node):
+        self.node = node
+        with ui.element('div').classes('panel'):
+            with ui.element('div').classes('panel-head'):
+                ui.label('BOMBA DE VACIO  (GPIO 16)').classes('panel-title')
+                self.state_label = ui.label('—').classes('caps')
+            caps_label('Bomba')
+            with ui.element('div').classes('btn-row'):
+                self.btn_on = button('Encender', 'primary', lambda: self.node.pump_set(True))
+                self.btn_off = button('Apagar', 'danger', lambda: self.node.pump_set(False))
+
+    def set_state(self, on):
+        if on is None:
+            self.state_label.set_text('—')
+            self.state_label.style('')
+        elif on:
+            self.state_label.set_text('ENCENDIDA')
+            self.state_label.style('color: var(--scara-accent)')
+        else:
+            self.state_label.set_text('APAGADA')
+            self.state_label.style('')
+
+    def set_enabled(self, enabled):
+        self.btn_on.set_enabled(enabled)
+        self.btn_off.set_enabled(enabled)
+
+
 class CircuitTestTab:
     def __init__(self, node, hub):
         self.node = node
@@ -113,9 +187,11 @@ class CircuitTestTab:
         with ui.element('div').classes('tab-body'):
             with ui.element('div').classes('motors'):
                 self.modules = {m: MotorModule(m, node) for m in range(1, NUM_MOTORS + 1)}
+                self.servo = ServoModule(node)
+                self.pump = PumpModule(node)
             with ui.element('div').classes('circuit-bottom'):
                 self.hint = ui.label('').classes('hint')
-                button('Detener todos', 'danger', lambda: node.test_stop(None))
+                button('Detener todos', 'danger', self._stop_all)
 
         hub.on('limits', self._on_limits)
         hub.on('status', lambda _payload: self._update_enabled())
@@ -131,6 +207,12 @@ class CircuitTestTab:
             module.set_running(bool(d.get(f'M{m}')))
             position = d.get(f'Q{m}') if d.get('CAL') else None
             module.set_encoder(d.get(f'E{m}'), position)
+        self.servo.set_state(d.get('Q4'))
+        self.pump.set_state(d.get('VAC'))
+
+    def _stop_all(self):
+        self.node.test_stop(None)
+        self.node.pump_set(False)          # tambien apaga la bomba
 
     def _on_connection(self, connected):
         if not connected:
@@ -138,6 +220,8 @@ class CircuitTestTab:
                 module.set_end_stops(None, None)
                 module.set_running(False)
                 module.set_encoder(None, None)
+            self.servo.set_state(None)
+            self.pump.set_state(None)
         self._update_enabled()
 
     def _update_enabled(self):
@@ -151,4 +235,6 @@ class CircuitTestTab:
             reason = ''
         for module in self.modules.values():
             module.set_start_enabled(connected and not homing)
+        self.servo.set_enabled(connected)       # no dependen del homing
+        self.pump.set_enabled(connected)
         self.hint.set_text(reason)

@@ -365,6 +365,36 @@ button, .q-btn, .segment, input {{ touch-action: manipulation; }}
 .mini-real {{ color: {t.TEXT_MUTED}; }}
 .p2p-row {{ display: flex; gap: 12px; align-items: flex-end; margin: 14px 0; flex-wrap: wrap; }}
 
+/* ---------------- Wiimote ---------------- */
+.wm-left {{ overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 6px; gap: 0; }}
+.wm-switches {{ display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end; }}
+.wm-link {{ font-family: {MONO}; font-size: 15px; margin-top: 14px; }}
+.wm-mode {{ font-family: {MONO}; font-size: 20px; font-weight: 700; color: {t.TEXT_STRONG}; margin-top: 8px; }}
+.wm-hint {{ font-size: 14px; line-height: 1.4; color: {t.TEXT_MUTED}; margin: 4px 0 8px; }}
+.wm-held {{ font-family: {MONO}; font-size: 17px; margin-bottom: 4px; }}
+.wm-section {{ margin: 16px 0 6px; }}
+.wm-bars {{ display: grid; grid-template-columns: 34px 1fr 92px; gap: 10px 12px; align-items: center; }}
+.wm-name {{ font-family: {MONO}; font-size: 20px; font-weight: 700; color: {t.TEXT_STRONG}; }}
+.wm-rate {{ font-family: {MONO}; font-size: 13px; color: {t.TEXT_MUTED}; text-align: right; }}
+.wm-bar {{ position: relative; height: 28px; }}
+.wm-bar > div {{ position: absolute; }}
+.wm-bar .track {{ left: 0; right: 0; top: 9px; height: 10px; border-radius: 5px; background: {t.DIVIDER}; }}
+.wm-bar .dead {{ top: 9px; height: 10px; background: {t.BG_PAGE}; }}
+.wm-bar .fill {{ top: 9px; height: 10px; background: {t.TEXT_MUTED}; }}
+.wm-bar .fill.on {{ background: {t.ACCENT}; }}
+.wm-bar .center {{ left: 50%; top: 3px; width: 2px; height: 22px; margin-left: -1px; background: {t.TEXT_STRONG}; }}
+.wm-bar .mark {{ top: 2px; width: 4px; height: 24px; margin-left: -2px; background: {t.TEXT_MUTED}; }}
+.wm-bar .mark.on {{ background: {t.ACCENT}; }}
+.wm-params {{ display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 8px 10px; align-items: center; }}
+.wm-params .num-param {{ width: 118px; }}
+.wm-label {{ font-size: 14px; color: {t.TEXT_MUTED}; }}
+.wm-axes {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; margin-top: 10px; }}
+.wm-axis {{ display: flex; align-items: center; gap: 8px; }}
+.wm-axis .q-field {{ width: 70px; }}
+.wm-axis .q-field__control {{ height: 44px; background: {t.BG_PAGE}; }}
+.wm-axis .q-field__native, .wm-axis .q-field__append {{ color: {t.TEXT} !important; font-family: {MONO}; }}
+.wm-axis .q-checkbox__label {{ font-size: 14px; color: {t.TEXT_MUTED}; }}
+
 /* ---------------- Vertical (iPad parado) ---------------- */
 @media (max-width: 900px) {{
   .header {{ gap: 12px; padding-left: 16px; }}
