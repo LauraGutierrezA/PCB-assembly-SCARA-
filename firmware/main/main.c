@@ -45,7 +45,13 @@
  *                  Se publica al cambiar y cada 1 s.
  *   /scara/target  (std_msgs/Float32MultiArray, PC -> ESP32), 11 valores:
  *                  [x, y, z, d1, d2, d3, d4, d5, d6, av, codo]
- *                  (mm, av en mm/vuelta, codo = +1 o -1)
+ *                  (mm, av en mm/vuelta, codo = +1 o -1) -> salto de consigna
+ *                  o 13 valores: [... , codo, T, id] (pestana Trayectoria):
+ *                  el ESP32 interpola hasta la meta en T segundos
+ *                  (components/control/profile.c). id: numero del tramo.
+ *                  En /scara/limits: PG = avance del tramo (0..100),
+ *                  GS = id del tramo en curso, ARR = llego (perfil terminado
+ *                  y los 3 motores dentro de DEAD_TOL_COUNTS).
  *   /scara/ik      (std_msgs/String, ESP32 -> PC): resultado de la IK, p. ej.
  *                  "OK x=300.0 y=150.0 z=0.0 th1=-2.049 th2=66.620 th3=44.171 codo=1 homed=1"
  *                  "ERR x=500.0 y=0.0 z=0.0 reason=OUT_OF_REACH homed=1"
@@ -95,6 +101,7 @@
 #include "encoders.h"
 #include "motor_test.h"
 #include "effector.h"          /* TRAYECTORIA: ventosa + servo */
+#include "profile.h"           /* TRAYECTORIA: perfil generado en el ESP32 */
 
 /* ================================================================
  *  "BOTON" DEL CONTROLADOR (IK, consignas y trayectorias)
@@ -119,6 +126,7 @@
 #define STATUS_BUF_LEN        48
 #define IK_BUF_LEN            160
 #define TARGET_LEN            11      /* x y z d1 d2 d3 d4 d5 d6 av codo */
+#define TARGET_LEN_GOAL       13      /* ... + T [s] + id  (trayectoria, perfil en el ESP32) */
 #define TEST_BUF_LEN          48
 #define LIMITS_BUF_LEN        200
 
@@ -165,7 +173,7 @@ static char cmd_buf[CMD_BUF_LEN];
 static char status_buf[STATUS_BUF_LEN];
 
 static std_msgs__msg__Float32MultiArray target_msg;
-static float target_buf[TARGET_LEN];
+static float target_buf[TARGET_LEN_GOAL];
 static std_msgs__msg__String ik_msg;
 static char ik_buf[IK_BUF_LEN];
 
@@ -194,6 +202,18 @@ static void cmd_callback(const void *msgin)
     const std_msgs__msg__String *m = (const std_msgs__msg__String *)msgin;
     /* TRAYECTORIA: "vac1", "vac0", "rot +90", "rot -90" (y "stop" apaga la bomba) */
     if (effector_handle_cmd(m->data.data, m->data.size)) return;
+    /* TRAYECTORIA: "ff 0.85" -> ganancia del feedforward (en vivo) */
+    {
+        char line_[CMD_BUF_LEN + 1];
+        const size_t n_ = m->data.size < CMD_BUF_LEN ? m->data.size : CMD_BUF_LEN;
+        memcpy(line_, m->data.data, n_);
+        line_[n_] = '\0';
+        float g_;
+        if (sscanf(line_, "ff %f", &g_) == 1) {
+            control_set_ff_gain(g_);
+            return;
+        }
+    }
     if (cmd_is(m, "start")) {
         homing_pro_start();
     } else if (cmd_is(m, "resume")) {
@@ -220,7 +240,7 @@ static void target_callback(const void *msgin)
         (const std_msgs__msg__Float32MultiArray *)msgin;
     const int homed = (homing_pro_get_state() == HP_DONE) ? 1 : 0;
 
-    if (m->data.size != TARGET_LEN) {
+    if (m->data.size != TARGET_LEN && m->data.size != TARGET_LEN_GOAL) {
         control_release();
         snprintf(ik_buf, sizeof(ik_buf), "ERR reason=BAD_MESSAGE n=%u homed=%d",
                  (unsigned)m->data.size, homed);
@@ -253,7 +273,12 @@ static void target_callback(const void *msgin)
                          "ERR x=%.1f y=%.1f z=%.1f reason=OUT_OF_RANGE joint=%d homed=%d",
                          target.x, target.y, target.z, bad, homed);
             } else {
-                control_set_reference(&q_ctrl);
+                if (m->data.size == TARGET_LEN_GOAL) {
+                    /* Trayectoria: el ESP32 interpola hasta la meta en T s */
+                    control_set_goal(&q_ctrl, v[11], (uint32_t)(v[12] + 0.5f));
+                } else {
+                    control_set_reference(&q_ctrl);   /* salto (P2P, DK, Wiimote) */
+                }
                 snprintf(ik_buf, sizeof(ik_buf),
                          "OK x=%.1f y=%.1f z=%.1f th1=%.3f th2=%.3f th3=%.3f codo=%d homed=%d",
                          target.x, target.y, target.z,
@@ -321,12 +346,16 @@ static void limits_publish_tick(void)
              (homing_pro_calibrated(0) && homing_pro_calibrated(1) &&
               homing_pro_calibrated(2)) ? 1 : 0);
 
-    /* TRAYECTORIA: llego (ARR), bomba (VAC) y angulo del servo (Q4) */
+    /* TRAYECTORIA: llego (ARR), bomba (VAC), angulo del servo (Q4) y
+     * controlador compilado (RST=1 -> RST en cascada, RST=0 -> PD). La
+     * interfaz web imprime en su terminal cual esta corriendo. */
     {
         size_t len_ = strlen(limits_buf);
         snprintf(limits_buf + len_, sizeof(limits_buf) - len_,
-                 " ARR=%d VAC=%d Q4=%d", control_arrived() ? 1 : 0,
-                 effector_vacuum_on() ? 1 : 0, effector_servo_deg());
+                 " ARR=%d VAC=%d Q4=%d RST=%d PG=%d GS=%lu FF=%d", control_arrived() ? 1 : 0,
+                 effector_vacuum_on() ? 1 : 0, effector_servo_deg(),
+                 CONTROL_USE_RST ? 1 : 0, prof_progress(), (unsigned long)prof_goal_id(),
+                 (int)(control_get_ff_gain() * 100.0f + 0.5f));
     }
     TickType_t now = xTaskGetTickCount();
     if (strcmp(limits_buf, limits_last) == 0 &&
@@ -398,7 +427,7 @@ static bool create_entities(void)
      * en el layout (desde Python se envia sin layout). */
     target_msg.data.data = target_buf;
     target_msg.data.size = 0;
-    target_msg.data.capacity = TARGET_LEN;
+    target_msg.data.capacity = TARGET_LEN_GOAL;
     target_msg.layout.dim.data = NULL;
     target_msg.layout.dim.size = 0;
     target_msg.layout.dim.capacity = 0;

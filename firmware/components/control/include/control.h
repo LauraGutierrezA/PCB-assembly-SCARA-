@@ -85,8 +85,25 @@ void control_update(void);
  * rad; th3 en mm desde el piso). Vale 0 antes del homingPRO. */
 void control_get_position(joints_t *pos);
 
-/* TRAYECTORIA: true si hay consigna y los 3 motores ya llegaron a ella
- * (misma histeresis "llego" del lazo). Se publica como ARR en /scara/limits. */
+/* TRAYECTORIA: true si hay consigna, el perfil (profile.c) ya termino y los
+ * 3 motores llegaron a ella (histeresis "llego" del lazo, DEAD_TOL_COUNTS).
+ * Se publica como ARR en /scara/limits. */
 bool control_arrived(void);
+
+/* TRAYECTORIA: meta con perfil generado en el ESP32 (profile.h). Desde la
+ * posicion/estado actual hasta goal en duration_s segundos. id: numero del
+ * tramo que manda el PC (un reenvio con el mismo id se ignora).
+ * Mientras el perfil corre NO se aplica la histeresis "llego" (no se frena
+ * ni se borra la memoria del controlador); solo al terminar. */
+void control_set_goal(const joints_t *goal, float duration_s, uint32_t id);
+
+/* TRAYECTORIA: ganancia del feedforward de velocidad (solo la usa el RST).
+ * La pestana Trayectoria la manda con "ff <valor>" por /scara/cmd; se
+ * satura a [FF_GAIN_MIN, FF_GAIN_MAX] y se publica como FF (en %) en
+ * /scara/limits. */
+#define FF_GAIN_MIN  0.0f
+#define FF_GAIN_MAX  1.2f
+void  control_set_ff_gain(float g);
+float control_get_ff_gain(void);
 
 #endif /* CONTROL_H */

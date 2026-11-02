@@ -38,6 +38,7 @@
 #include "motors.h"
 #include "homing_pro.h"
 #include "motor_test.h"
+#include "profile.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -161,6 +162,31 @@ static void rst_init_coefs(void)
  */
 #define OMEGA_ALPHA  1.0f
 
+/* ============================================================
+ *        FEEDFORWARD DE VELOCIDAD (trayectorias, profile.c)
+ * ============================================================
+ * Mientras el perfil del ESP32 mueve la referencia, a la salida del externo
+ * (w_ref) se le suma la velocidad de la propia referencia (derivada de las
+ * cuentas objetivo, en rad/s del motor). El interno es un lazo de
+ * VELOCIDAD, asi que sigue el perfil casi sin retraso y el externo solo
+ * corrige el error que quede.
+ *   1.0 -> feedforward completo.  0.0 -> apagado (solo el RST, como antes).
+ * Si ves sobrepaso al final de los tramos, bajarlo (0.7 - 0.9).
+ * Se cambia EN VIVO desde la pestana Trayectoria (comando "ff <valor>" por
+ * /scara/cmd, ver control_set_ff_gain); FF_GAIN es el valor al arrancar.
+ */
+#define FF_GAIN      1.0f
+static volatile float ff_gain = FF_GAIN;
+
+void control_set_ff_gain(float g)
+{
+    if (g < FF_GAIN_MIN) g = FF_GAIN_MIN;
+    if (g > FF_GAIN_MAX) g = FF_GAIN_MAX;
+    ff_gain = g;
+}
+
+float control_get_ff_gain(void) { return ff_gain; }
+
 /* Radianes del EJE DEL MOTOR por cuenta del encoder. */
 #define MOTOR_RAD_PER_COUNT  (6.28318531f / (float)ENC_COUNTS_PER_REV)
 
@@ -189,6 +215,7 @@ static volatile uint32_t ref_seq = 0;
 
 void control_set_reference(const joints_t *r)
 {
+    prof_cancel();          /* consigna directa (Punto a punto, DK, Wiimote): sin perfil */
     portENTER_CRITICAL(&ref_lock);
     ref = *r;
     has_ref = true;
@@ -220,7 +247,22 @@ static void clear_reference(void)
 
 void control_release(void)
 {
+    prof_cancel();
     clear_reference();
+}
+
+/* TRAYECTORIA: meta con perfil (ver control.h y profile.h). Primero se pide
+ * el perfil y DESPUES se cambia la referencia: asi el nucleo 1 nunca ve la
+ * meta final sin su perfil (no hay un salto de 8 ms). */
+void control_set_goal(const joints_t *goal, float duration_s, uint32_t id)
+{
+    if (!prof_request(goal, duration_s, id)) return;   /* reenvio: ya la tiene */
+    portENTER_CRITICAL(&ref_lock);
+    ref = *goal;
+    has_ref = true;
+    ref_seq++;
+    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    portEXIT_CRITICAL(&ref_lock);
 }
 
 
@@ -319,6 +361,8 @@ typedef struct {
     float   w_f;         /* omega filtrada */
     float   w_ref;       /* salida del externo, se mantiene entre muestras */
     bool    first;       /* primera muestra: inicializar memoria */
+    float   cr_prev;     /* cuentas objetivo en el paso anterior (feedforward) */
+    bool    cr_valid;
 } rst_aux_t;
 
 static rst_in_mem_t  mem_in[NUM_JOINTS];
@@ -333,6 +377,7 @@ static void reset_motor(int i)
     aux[i].w_f    = 0.0f;
     aux[i].w_ref  = 0.0f;
     aux[i].first  = true;
+    aux[i].cr_valid = false;
 }
 
 static void reset_controladores(void)
@@ -432,17 +477,22 @@ static void escribir_actuador(int i, float u)
  * ============================================================ */
 
 /* Un paso de los 3 motores, cada TS_IN_MS (8 ms).
- * run_outer = true cada OUT_EVERY pasos: corre tambien el externo. */
-static void control_step(const joints_t *r, bool run_outer)
+ * run_outer = true cada OUT_EVERY pasos: corre tambien el externo.
+ * moving = true mientras el perfil del ESP32 mueve la referencia. */
+static void control_step(const joints_t *r, bool run_outer, bool moving)
 {
     for (int i = 0; i < NUM_JOINTS; i++) {
         /* 1. Leer sensor */
         const int32_t c  = encoder_get_count(i);
         const float   cr = ref_counts(i, joint_of(r, i));
 
-        /* 2. Histeresis de "llego" (en cuentas, como control.c) */
+        /* 2. Histeresis de "llego" (en cuentas, como control.c). Mientras el
+         *    perfil se mueve NO aplica: si no, el motor frenaria y se le
+         *    borraria la memoria cada vez que alcanza a la referencia. */
         const float err_cts = fabsf(cr - (float)c);
-        if (llego[i]) {
+        if (moving) {
+            llego[i] = false;
+        } else if (llego[i]) {
             if (err_cts > (float)DEAD_OUT_COUNTS) {
                 llego[i] = false;
                 reset_motor(i);          /* vuelve a arrancar desde cero */
@@ -473,12 +523,21 @@ static void control_step(const joints_t *r, bool run_outer)
             aux[i].w_ref = rst_externo(i, th_ref, th_k);
         }
 
+        /* 4b. Feedforward: velocidad de la referencia [rad/s del motor] */
+        float w_ff = 0.0f;
+        if (moving && aux[i].cr_valid) {
+            w_ff = counts_to_motor_rad(i, cr - aux[i].cr_prev) / TS_IN_S;
+        }
+        aux[i].cr_prev = cr;
+        aux[i].cr_valid = true;
+        const float w_cmd = limitar(aux[i].w_ref + ff_gain * w_ff, -W_MAX_RAD_S, W_MAX_RAD_S);
+
         /* 5. LAZO INTERNO (cada 8 ms): velocidad -> u [V] */
         if (aux[i].first) {
             /* Arranque: memoria de velocidad = velocidad actual */
             mem_in[i].y1 = omega_k;  mem_in[i].y2 = omega_k;
         }
-        float u = rst_interno(i, aux[i].w_ref, omega_k);
+        float u = rst_interno(i, w_cmd, omega_k);
         aux[i].first = false;
 
         /* 6. Finales de carrera: si el motor esta tocando el final hacia
@@ -520,6 +579,7 @@ void control_update(void)
      *    consigna que llegara antes. */
     if (homed && !homed_before) {
         reset_controladores();
+        prof_cancel();
         clear_reference();
         tick = 0;
     }
@@ -544,8 +604,14 @@ void control_update(void)
         tick = 0;
     }
 
-    /* 3. Interno en cada llamada (8 ms); externo cada OUT_EVERY llamadas. */
-    control_step(&r, tick == 0);
+    /* 3. Perfil del ESP32 (trayectorias): reemplaza r por la referencia del
+     *    instante. Solo avanza aqui, con el control activo (dead-man). */
+    joints_t meas;
+    control_get_position(&meas);
+    const bool moving = prof_step(TS_IN_S, &meas, &r);
+
+    /* 4. Interno en cada llamada (8 ms); externo cada OUT_EVERY llamadas. */
+    control_step(&r, tick == 0, moving);
     tick++;
     if (tick >= OUT_EVERY) {
         tick = 0;
@@ -559,6 +625,7 @@ void control_update(void)
 bool control_arrived(void)
 {
     bool ok;
+    if (prof_running()) return false;    /* el perfil del ESP32 aun no termina */
     portENTER_CRITICAL(&ref_lock);
     ok = has_ref && llego[0] && llego[1] && llego[2];
     portEXIT_CRITICAL(&ref_lock);

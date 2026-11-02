@@ -14,6 +14,7 @@
 #include "motors.h"
 #include "homing_pro.h"
 #include "motor_test.h"
+#include "profile.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -126,6 +127,7 @@ static volatile uint32_t ref_seq = 0;
 
 void control_set_reference(const joints_t *r)
 {
+    prof_cancel();          /* consigna directa (Punto a punto, DK, Wiimote): sin perfil */
     portENTER_CRITICAL(&ref_lock);
     ref = *r;
     has_ref = true;
@@ -159,7 +161,31 @@ static void clear_reference(void)
 
 void control_release(void)
 {
+    prof_cancel();
     clear_reference();
+}
+
+/* FF_GAIN: el PD no usa feedforward; se guarda para que la interfaz vea el
+ * valor (y para que la API sea igual a la de controlRST.c). */
+static volatile float ff_gain = 1.0f;
+void control_set_ff_gain(float g)
+{
+    if (g < FF_GAIN_MIN) g = FF_GAIN_MIN;
+    if (g > FF_GAIN_MAX) g = FF_GAIN_MAX;
+    ff_gain = g;
+}
+float control_get_ff_gain(void) { return ff_gain; }
+
+/* TRAYECTORIA: meta con perfil (ver control.h y profile.h). */
+void control_set_goal(const joints_t *goal, float duration_s, uint32_t id)
+{
+    if (!prof_request(goal, duration_s, id)) return;   /* reenvio: ya la tiene */
+    portENTER_CRITICAL(&ref_lock);
+    ref = *goal;
+    has_ref = true;
+    ref_seq++;
+    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    portEXIT_CRITICAL(&ref_lock);
 }
 
 
@@ -325,8 +351,9 @@ static void escribir_actuador(int i, float u)
  *                   CICLO DE CONTROL
  * ============================================================ */
 
-/* Un paso de los 3 lazos (se ejecuta cada CONTROL_TS_MS). */
-static void control_step(const joints_t *r)
+/* Un paso de los 3 lazos (se ejecuta cada CONTROL_TS_MS).
+ * moving = true mientras el perfil del ESP32 mueve la referencia. */
+static void control_step(const joints_t *r, bool moving)
 {
     for (int i = 0; i < NUM_JOINTS; i++) {
         float e = error_motor_rad(i, joint_of(r, i));
@@ -337,7 +364,9 @@ static void control_step(const joints_t *r)
          *    - si ya llego: salida 0 (freno) hasta que se aleje mas de
          *      DEAD_OUT_COUNTS. */
         const float err_cts = fabsf(e) / MOTOR_RAD_PER_COUNT;
-        if (llego[i]) {
+        if (moving) {
+            llego[i] = false;        /* perfil en curso: sin freno a mitad de camino */
+        } else if (llego[i]) {
             if (err_cts > (float)DEAD_OUT_COUNTS) llego[i] = false;
         } else if (err_cts <= (float)DEAD_TOL_COUNTS) {
             llego[i] = true;
@@ -381,6 +410,7 @@ void control_update(void)
      *    la calibracion del homingPRO depende de sus cuentas.) */
     if (homed && !homed_before) {
         reset_controladores();
+        prof_cancel();
         clear_reference();
         tick = 0;
     }
@@ -403,10 +433,16 @@ void control_update(void)
     }
     active = true;
 
-    /* 3. El controlador corre cada CONTROL_TS_MS (el Ts del diseno),
+    /* 3. Perfil del ESP32 (trayectorias): avanza cada CONTROL_LOOP_MS y
+     *    reemplaza r por la referencia del instante. */
+    joints_t meas;
+    control_get_position(&meas);
+    const bool moving = prof_step((float)CONTROL_LOOP_MS / 1000.0f, &meas, &r);
+
+    /* 4. El controlador corre cada CONTROL_TS_MS (el Ts del diseno),
      *    aunque esta funcion se llame cada CONTROL_LOOP_MS. */
     if (tick == 0) {
-        control_step(&r);
+        control_step(&r, moving);
     }
     tick++;
     if (tick >= (CONTROL_TS_MS / CONTROL_LOOP_MS)) {
@@ -421,6 +457,7 @@ void control_update(void)
 bool control_arrived(void)
 {
     bool ok;
+    if (prof_running()) return false;    /* el perfil del ESP32 aun no termina */
     portENTER_CRITICAL(&ref_lock);
     ok = has_ref && llego[0] && llego[1] && llego[2];
     portEXIT_CRITICAL(&ref_lock);
