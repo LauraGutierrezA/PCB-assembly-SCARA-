@@ -51,9 +51,8 @@ static void servo_write(int deg)
 
 void effector_init(void)
 {
-    /* Bomba: salida en reposo (apagada). GPIO 12 es pin de arranque: el
-     * MOSFET debe tener pull-down en la compuerta para que quede en BAJO
-     * mientras el ESP32 arranca. */
+    /* Bomba: salida en reposo (apagada). Poner un pull-down de 10k en la
+     * compuerta del MOSFET para que quede apagada mientras el ESP32 arranca. */
     gpio_config_t io = {
         .pin_bit_mask = 1ULL << PIN_VACUUM,
         .mode = GPIO_MODE_OUTPUT,
@@ -94,14 +93,18 @@ void effector_set_vacuum(bool on)
 
 bool effector_vacuum_on(void) { return vacuum; }
 
+int effector_set_servo_deg(int deg)
+{
+    if (deg < SERVO_MIN_DEG) deg = SERVO_MIN_DEG;
+    if (deg > SERVO_MAX_DEG) deg = SERVO_MAX_DEG;
+    servo_deg = deg;
+    servo_write(deg);
+    return deg;
+}
+
 int effector_rotate_rel(int delta_deg)
 {
-    int d = servo_deg + delta_deg;
-    if (d < SERVO_MIN_DEG) d = SERVO_MIN_DEG;
-    if (d > SERVO_MAX_DEG) d = SERVO_MAX_DEG;
-    servo_deg = d;
-    servo_write(d);
-    return d;
+    return effector_set_servo_deg(servo_deg + delta_deg);
 }
 
 int effector_servo_deg(void) { return servo_deg; }
@@ -120,6 +123,10 @@ bool effector_handle_cmd(const char *data, size_t n)
     int delta;
     if (sscanf(line, "rot %d", &delta) == 1) {
         if (delta == 90 || delta == -90) effector_rotate_rel(delta);
+        return true;
+    }
+    if (sscanf(line, "servo %d", &delta) == 1) {      /* absoluto (prueba de circuito) */
+        effector_set_servo_deg(delta);
         return true;
     }
     return false;

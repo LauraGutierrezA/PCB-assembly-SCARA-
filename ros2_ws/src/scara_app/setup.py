@@ -27,6 +27,7 @@ setup(
             'fsm_node = scara_app.fsm_node:main',
             'scara_gui = scara_app.scara_gui:main',
             'scara_web = scara_app.scara_web:main',
+            'wiimote_node = scara_app.wiimote_node:main',
         ],
     },
 )

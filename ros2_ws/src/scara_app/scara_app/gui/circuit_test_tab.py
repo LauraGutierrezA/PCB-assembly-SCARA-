@@ -11,6 +11,13 @@ Un modulo por motor, para probar cada parte del circuito por separado:
      Start y Stop. El motor gira el tiempo indicado y se detiene solo.
      NO se detiene al tocar un end-stop (la prueba es aislada).
 
+Accesorios (debajo de los motores), con el efector del firmware (components/effector):
+  - Servo en GPIO 2: slider -90..+90 grados (se manda al soltar), botones -90/0/+90 y
+    Enviar. Manda "servo <grados>" por /scara/cmd; el estado sale de Q4 en /scara/limits.
+  - Bomba de vacio en GPIO 16: Encender / Apagar ("vac1" / "vac0"; estado VAC).
+    "Detener todos" y el boton STOP tambien la apagan. Funcionan con el ESP32
+    conectado, aun durante el homing.
+
 Mientras el homing esta corriendo, los Start se deshabilitan (el homing
 tiene prioridad sobre los motores). Stop siempre funciona.
 
@@ -236,6 +243,155 @@ class MotorModule(QFrame):
         self.btn_start.setToolTip('Mover el motor el tiempo indicado' if enabled else reason)
 
 
+SERVO_MIN_DEG, SERVO_MAX_DEG = -90, 90          # igual que components/effector
+SERVO_DEFAULT_DEG = 0
+SERVO_PRESETS = (-90, 0, 90)
+
+
+class ServoModule(QFrame):
+    """Servo en GPIO 2: angulo -90..+90 (Enviar o soltar el slider)."""
+
+    def __init__(self, ros_node, parent=None):
+        super().__init__(parent)
+        self.node = ros_node
+        self.setObjectName('panel')
+
+        title = QLabel('SERVO  (GPIO 2)')
+        title.setFont(theme.mono(12, bold=True))
+        title.setStyleSheet(f'color:{theme.TEXT_STRONG};')
+        self.state_label = QLabel('—')
+        self.state_label.setFont(theme.caps_label_font(7))
+        header = QHBoxLayout()
+        header.addWidget(title)
+        header.addStretch()
+        header.addWidget(self.state_label)
+
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(SERVO_MIN_DEG, SERVO_MAX_DEG)
+        self.slider.setValue(SERVO_DEFAULT_DEG)
+        self.slider.setStyleSheet(
+            f'QSlider::groove:horizontal {{ height:4px; background:{theme.DIVIDER};'
+            f' border-radius:2px; }}'
+            f'QSlider::sub-page:horizontal {{ background:{theme.PRIMARY}; border-radius:2px; }}'
+            f'QSlider::handle:horizontal {{ background:{theme.ACCENT}; width:14px;'
+            f' height:14px; margin:-5px 0; border-radius:7px; }}')
+        self.angle_value = QLabel()
+        self.angle_value.setFont(theme.mono(12, bold=True))
+        self.angle_value.setFixedWidth(60)
+        self.angle_value.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.slider.valueChanged.connect(lambda v: self.angle_value.setText(f'{v}°'))
+        self.angle_value.setText(f'{self.slider.value()}°')
+        # Mandar al soltar el slider (no a cada pixel): el servo no se sacude
+        self.slider.sliderReleased.connect(self._send)
+        slider_row = QHBoxLayout()
+        slider_row.addWidget(self.slider, stretch=1)
+        slider_row.addWidget(self.angle_value)
+
+        presets = QHBoxLayout()
+        presets.setSpacing(8)
+        for deg in SERVO_PRESETS:
+            b = button(f'{deg}°', 'secondary', f'Mover el servo a {deg}°')
+            b.setMinimumWidth(0)
+            b.clicked.connect(lambda _c=False, d=deg: self._go(d))
+            presets.addWidget(b)
+        self.btn_send = button('Enviar', 'primary', 'Mover el servo al angulo del slider')
+        self.btn_send.setMinimumWidth(0)
+        self.btn_send.clicked.connect(self._send)
+        presets.addStretch()
+        presets.addWidget(self.btn_send)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 14, 16, 16)
+        lay.setSpacing(0)
+        lay.addLayout(header)
+        lay.addSpacing(14)
+        lay.addWidget(caps_label('Angulo'))
+        lay.addSpacing(8)
+        lay.addLayout(slider_row)
+        lay.addSpacing(12)
+        lay.addLayout(presets)
+        lay.addStretch()
+        self.set_state(None)
+
+    def _go(self, deg):
+        self.slider.setValue(deg)
+        self._send()
+
+    def _send(self):
+        self.node.servo_set(self.slider.value())
+
+    def set_state(self, angle):
+        """angle: grados que reporta el firmware (Q4), None = sin datos."""
+        if angle is None:
+            self.state_label.setText('—')
+            self.state_label.setStyleSheet(f'color:{theme.TEXT_MUTED};')
+        else:
+            self.state_label.setText(f'EN {int(round(angle))}°')
+            self.state_label.setStyleSheet(f'color:{theme.ACCENT};')
+
+    def set_enabled_by_link(self, enabled, reason=''):
+        self.btn_send.setEnabled(enabled)
+        self.btn_send.setToolTip('' if enabled else reason)
+
+
+class PumpModule(QFrame):
+    """Bomba de vacio en GPIO 16: Encender / Apagar."""
+
+    def __init__(self, ros_node, parent=None):
+        super().__init__(parent)
+        self.node = ros_node
+        self.setObjectName('panel')
+
+        title = QLabel('BOMBA DE VACIO  (GPIO 16)')
+        title.setFont(theme.mono(12, bold=True))
+        title.setStyleSheet(f'color:{theme.TEXT_STRONG};')
+        self.state_label = QLabel('APAGADA')
+        self.state_label.setFont(theme.caps_label_font(7))
+        header = QHBoxLayout()
+        header.addWidget(title)
+        header.addStretch()
+        header.addWidget(self.state_label)
+
+        self.btn_on = button('Encender', 'primary', 'Encender la bomba')
+        self.btn_off = button('Apagar', 'danger', 'Apagar la bomba')
+        for b in (self.btn_on, self.btn_off):
+            b.setMinimumWidth(0)
+        self.btn_on.clicked.connect(lambda: self.node.pump_set(True))
+        self.btn_off.clicked.connect(lambda: self.node.pump_set(False))
+        buttons = QHBoxLayout()
+        buttons.setSpacing(8)
+        buttons.addWidget(self.btn_on)
+        buttons.addWidget(self.btn_off)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 14, 16, 16)
+        lay.setSpacing(0)
+        lay.addLayout(header)
+        lay.addSpacing(14)
+        lay.addWidget(caps_label('Bomba'))
+        lay.addSpacing(10)
+        lay.addLayout(buttons)
+        lay.addStretch()
+        self.set_state(None)
+
+    def set_state(self, on):
+        """on: True/False, None = sin datos."""
+        if on is None:
+            self.state_label.setText('—')
+            self.state_label.setStyleSheet(f'color:{theme.TEXT_MUTED};')
+        elif on:
+            self.state_label.setText('ENCENDIDA')
+            self.state_label.setStyleSheet(f'color:{theme.ACCENT};')
+        else:
+            self.state_label.setText('APAGADA')
+            self.state_label.setStyleSheet(f'color:{theme.TEXT_MUTED};')
+
+    def set_enabled_by_link(self, enabled, reason=''):
+        for b in (self.btn_on, self.btn_off):
+            b.setEnabled(enabled)
+            b.setToolTip('' if enabled else reason)
+
+
 class CircuitTestTab(QWidget):
     def __init__(self, ros_node, parent=None):
         super().__init__(parent)
@@ -247,8 +403,16 @@ class CircuitTestTab(QWidget):
         for m in range(1, NUM_MOTORS + 1):
             row.addWidget(self.modules[m], stretch=1)
 
-        self.btn_stop_all = button('Detener todos', 'danger', 'Detener los 3 motores')
-        self.btn_stop_all.clicked.connect(lambda: self.node.test_stop(None))
+        self.servo = ServoModule(ros_node)
+        self.pump = PumpModule(ros_node)
+        acc_row = QHBoxLayout()
+        acc_row.setSpacing(14)
+        acc_row.addWidget(self.servo, stretch=2)
+        acc_row.addWidget(self.pump, stretch=1)
+
+        self.btn_stop_all = button('Detener todos', 'danger',
+                                   'Detener los 3 motores y apagar la bomba')
+        self.btn_stop_all.clicked.connect(self._stop_all)
         self.hint = QLabel('')
         self.hint.setFont(theme.sans(9))
         self.hint.setStyleSheet(f'color:{theme.TEXT_MUTED};')
@@ -261,6 +425,8 @@ class CircuitTestTab(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(0)
         layout.addLayout(row, stretch=1)
+        layout.addSpacing(14)
+        layout.addLayout(acc_row)
         layout.addSpacing(16)
         layout.addLayout(bottom)
 
@@ -277,6 +443,12 @@ class CircuitTestTab(QWidget):
             # La posicion solo vale si el homingPRO ya calibro (CAL=1)
             position = d.get(f'Q{m}') if d.get('CAL') else None
             module.set_encoder(d.get(f'E{m}'), position)
+        self.servo.set_state(d.get('Q4'))
+        self.pump.set_state(d.get('VAC'))
+
+    def _stop_all(self):
+        self.node.test_stop(None)
+        self.node.pump_set(False)          # tambien apaga la bomba
 
     def _on_connection(self, connected):
         if not connected:
@@ -284,6 +456,8 @@ class CircuitTestTab(QWidget):
                 module.set_end_stops(None, None)
                 module.set_running(False)
                 module.set_encoder(None, None)
+            self.servo.set_state(None)
+            self.pump.set_state(None)
         self._update_enabled()
 
     def _update_enabled(self):
@@ -297,4 +471,8 @@ class CircuitTestTab(QWidget):
             reason = ''
         for module in self.modules.values():
             module.set_start_enabled(connected and not homing, reason)
+        # El servo y la bomba no dependen del homing: solo de la conexion
+        link_reason = '' if connected else 'ESP32 sin conexion'
+        self.servo.set_enabled_by_link(connected, link_reason)
+        self.pump.set_enabled_by_link(connected, link_reason)
         self.hint.setText(reason)

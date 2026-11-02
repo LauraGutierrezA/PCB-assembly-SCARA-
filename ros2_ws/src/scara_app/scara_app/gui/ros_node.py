@@ -16,14 +16,24 @@ Topicos:
   /scara/test_cmd (std_msgs/String) PC -> ESP32   prueba de circuito: "run 1 L 45 1.0" | "stop 1" | "stop all"
   /scara/limits  (std_msgs/String)  ESP32 -> PC   "L1=0 R1=1 ... M1=0 M2=1 M3=0 E1=1234 ... Q1=12.3 ..."
                  (ver parse_limits)
+
+Control con Wiimote (ver wiimote_node.py, wiimote_bridge.py y gui/wiimote_tab.py):
+  /wiimote/joy  (sensor_msgs/Joy)   wiimote_node -> aqui   estado de los botones, 50 Hz
+  /wiimote/imu  (sensor_msgs/Imu)   wiimote_node -> aqui   giroscopio y acelerometro, 50 Hz
+  /wiimote/cmd  (std_msgs/String)   aqui -> wiimote_node   "calibrate"
+La logica vive en self.wiimote (WiimoteBridge): una sola instancia por nodo.
 """
 import time
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from rclpy.node import Node
+from sensor_msgs.msg import Imu, Joy
 from std_msgs.msg import Float32MultiArray, String
 
+from scara_app.gui.point_to_point_tab import ROBOT_DEFAULTS
 from scara_app.robot_model import codo_for, fk_xy
+from scara_app.wiimote_bridge import WiimoteBridge
+from scara_app.wiimote_control import BUTTON_NAMES
 
 # Si no llega /scara/status en este tiempo, se considera desconectado.
 # El ESP32 publica un "latido" cada 1 s.
@@ -90,6 +100,8 @@ class RosSignals(QObject):
     connection_changed = pyqtSignal(bool)    # True = ESP32 respondiendo
     ik_result = pyqtSignal(dict)             # cada mensaje de /scara/ik (ya interpretado)
     limits_received = pyqtSignal(dict)       # cada mensaje de /scara/limits (ya interpretado)
+    wiimote_state = pyqtSignal(dict)         # estado del control con Wiimote (~15 Hz)
+    wiimote_log = pyqtSignal(str, str)       # (texto, nivel) para la consola de la pestana
 
 
 class ScaraGuiNode(Node):
@@ -111,6 +123,22 @@ class ScaraGuiNode(Node):
         # Revisa la conexion 2 veces por segundo
         self.create_timer(0.5, self._check_connection)
 
+        # Control con Wiimote (desactivado hasta activarlo en su pestana)
+        robot = dict(ROBOT_DEFAULTS)
+        self._wiimote_cmd_pub = self.create_publisher(String, 'wiimote/cmd', 10)
+        self.wiimote = WiimoteBridge(
+            robot,
+            send_joints=lambda th1, th2, z: self.send_joints(th1, th2, z, robot),
+            deadman_beat=self.deadman_beat,
+            deadman_release=self.deadman_release,
+            emergency_stop=self.emergency_stop,
+            log=self.signals.wiimote_log.emit,
+            on_state=self.signals.wiimote_state.emit,
+            calibrate=lambda: self._wiimote_cmd_pub.publish(String(data='calibrate')))
+        self.create_subscription(Joy, 'wiimote/joy', self._on_wiimote_joy, 10)
+        self.create_subscription(Imu, 'wiimote/imu', self._on_wiimote_imu, 10)
+        self.create_timer(0.02, self.wiimote.tick)
+
     # ---------------- Comandos (los llaman las pestanas) ----------------
     def send_command(self, cmd: str):
         msg = String()
@@ -130,6 +158,11 @@ class ScaraGuiNode(Node):
     def release_control(self):
         """Borra la consigna en el firmware (al entrar a Prueba de circuito)."""
         self.send_command('release')
+
+    def emergency_stop(self):
+        """Esc / HOME del Wiimote: detiene todo y desactiva el control con Wiimote."""
+        self.send_command('stop')
+        self.wiimote.set_enabled(False)
 
     def _publish_cmd_quiet(self, cmd: str):
         msg = String()
@@ -161,6 +194,14 @@ class ScaraGuiNode(Node):
         """Prueba de circuito: detiene un motor (1-3) o todos (None)."""
         self._send_test('stop all' if motor is None else f'stop {motor}')
 
+    def servo_set(self, degrees: float):
+        """Prueba de circuito: servo del efector (GPIO 2) al angulo dado, -90 a +90."""
+        self.send_command(f'servo {int(round(max(-90.0, min(90.0, degrees))))}')
+
+    def pump_set(self, on: bool):
+        """Prueba de circuito: enciende o apaga la bomba de vacio (GPIO 16)."""
+        self.send_command('vac1' if on else 'vac0')
+
     def _send_test(self, text: str):
         msg = String()
         msg.data = text
@@ -180,10 +221,21 @@ class ScaraGuiNode(Node):
             self.signals.status_changed.emit(msg.data)
 
     def _on_ik(self, msg: String):
-        self.signals.ik_result.emit(parse_ik(msg.data))
+        result = parse_ik(msg.data)
+        self.wiimote.on_ik_result(result)
+        self.signals.ik_result.emit(result)
 
     def _on_limits(self, msg: String):
-        self.signals.limits_received.emit(parse_limits(msg.data))
+        data = parse_limits(msg.data)
+        self.wiimote.on_limits(data)
+        self.signals.limits_received.emit(data)
+
+    def _on_wiimote_joy(self, msg: Joy):
+        self.wiimote.on_joy([name for name, v in zip(BUTTON_NAMES, msg.buttons) if v])
+
+    def _on_wiimote_imu(self, msg: Imu):
+        w = msg.angular_velocity
+        self.wiimote.on_imu(w.x, w.y, w.z)
 
     def _check_connection(self):
         alive = (time.monotonic() - self._last_status_time) < CONNECTION_TIMEOUT_S

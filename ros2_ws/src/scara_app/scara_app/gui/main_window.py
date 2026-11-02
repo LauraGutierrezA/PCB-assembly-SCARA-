@@ -17,6 +17,9 @@ de pestana o al salir de la ventana, el dead-man se suelta.
 Al entrar a "Prueba de circuito" se borra la consigna del firmware
 ("release"), para que el controlador no devuelva el motor a la consigna
 vieja despues de cada prueba.
+La pestana "Wiimote" tiene su propio dead-man (el boton B del Wiimote, ver
+wiimote_bridge.py): el control con Wiimote se desactiva al salir de la
+pestana, con Esc / STOP y al cerrar la ventana.
 
 Para agregar una pestana nueva (p. ej. punto a punto):
   1. Crear gui/point_to_point_tab.py con una clase QWidget que reciba ros_node.
@@ -36,6 +39,7 @@ from .point_to_point_tab import PointToPointTab
 from .dk_tab import DkTab
 from .circuit_test_tab import CircuitTestTab
 from .widgets import Deadman
+from .wiimote_tab import WiimoteTab
 
 
 class MainWindow(QMainWindow):
@@ -92,6 +96,8 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(DkTab(self.node, self.deadman), 'DK')
         self.circuit_tab = CircuitTestTab(self.node)
         self.tabs.addTab(self.circuit_tab, 'Prueba de circuito')
+        self.wiimote_tab = WiimoteTab(self.node)
+        self.tabs.addTab(self.wiimote_tab, 'Wiimote')
         # Aqui iran: 'Jog', 'Caracterizacion', ...
 
     def _build_header(self):
@@ -128,10 +134,16 @@ class MainWindow(QMainWindow):
 
     def _emergency_stop(self):
         self.deadman.release_all()
-        self.node.send_command('stop')
+        self.node.emergency_stop()      # 'stop' y desactiva el control con Wiimote
+
+    def closeEvent(self, event):
+        self.node.wiimote.set_enabled(False)
+        super().closeEvent(event)
 
     def _on_tab_changed(self, _index):
         self.deadman.release_all()
+        if self.tabs.currentWidget() is not self.wiimote_tab:
+            self.node.wiimote.set_enabled(False)
         if self.tabs.currentWidget() is self.circuit_tab:
             self.node.release_control()
 
