@@ -300,7 +300,7 @@ class WiimoteTab(QWidget):
                                 else 'DK · cinemática directa  (botón 2)')
         if ik:
             self.hint_label.setText('D-pad: ↑↓ = X, ←→ = Y · +/− = z · mantén B para mover · '
-                                    'botón 2 = modo DK · HOME = paro')
+                                    'A = bomba ON/OFF · botón 2 = modo DK · HOME = paro')
         else:
             ax = p['gyro_axes']
             self.hint_label.setText(
@@ -308,7 +308,7 @@ class WiimoteTab(QWidget):
                 'mueve hasta que vuelvas al centro. '
                 + ' · '.join(f"{JOINT_LABELS[j]} ← eje {ax[j][0]}{'(−)' if ax[j][1] < 0 else ''}"
                              for j in JOINTS)
-                + ' · mantén B · botón 1 = modo IK · HOME = paro')
+                + ' · mantén B · A = bomba ON/OFF · botón 1 = modo IK · HOME = paro')
 
         if not s['enabled']:
             held, held_color = 'B: desactivado', theme.TEXT_MUTED
@@ -320,6 +320,9 @@ class WiimoteTab(QWidget):
         if s['blocked'] and s['held']:
             held += '  ·  LÍMITE'
             held_color = theme.CONNECTED
+        if s['enabled']:
+            held += ('  ·  Bomba: ' + ('ON' if s['pump'] else 'OFF')
+                     + (' (simulación)' if s['dry_run'] else ''))
         self.held_label.setText(held)
         self.held_label.setStyleSheet(f'color:{held_color};')
 

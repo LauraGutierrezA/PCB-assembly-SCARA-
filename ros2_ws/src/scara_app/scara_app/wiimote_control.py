@@ -14,7 +14,8 @@ Botones:
   2      modo cinematica DIRECTA (DK)
   B      dead-man: el robot solo se mueve mientras B esta presionado
   HOME   paro de emergencia
-  A      sin funcion por ahora
+  A      bomba de vacio: cada pulsacion la enciende o la apaga (funciona con B suelto;
+         HOME la apaga)
 
 Modo IK:  D-pad  -> X / Y  (Arriba = +X; +Y es la DERECHA si PLAN_Y_RIGHT, la izquierda si no:
           siempre el mismo lado que muestra el gemelo)
@@ -103,6 +104,7 @@ class WiimoteController:
         self.blocked = False                 # se pidio un movimiento imposible (limite)
         self.angles = {k: 0.0 for k in JOINTS}   # angulo relativo integrado (DK)
         self.events = []                     # [(tipo, texto)] pendientes de leer
+        self.pump = False                    # estado de la bomba (A la alterna)
         self.simulate = False                # True: sin correa ni resincronizar con el robot
         self.engage_q = dict(self.q)         # consigna en el instante de presionar B
         self._prev = frozenset()
@@ -146,8 +148,12 @@ class WiimoteController:
         if 'HOME' in rising:
             self._release('home')
             self._need_repress = True
+            self.pump = False                # el firmware apaga la bomba con "stop"
             self.events.append(('stop', 'HOME'))
             return False
+        if 'A' in rising:
+            self.pump = not self.pump
+            self.events.append(('pump', 'on' if self.pump else 'off'))
         if 'ONE' in rising:
             self.set_mode(MODE_IK)
         elif 'TWO' in rising:

@@ -13,6 +13,7 @@ Entra:   on_joy / on_imu   lo que publica wiimote_node.py (/wiimote/joy, /wiimot
 Sale:    send_joints(th1, th2, z)   consigna (como la pestana DK)
          deadman_beat() / deadman_release()   latido "dm1" / "dm0"
          emergency_stop()           HOME -> "stop"
+         pump(on)                   boton A: bomba de vacio ON/OFF (solo en modo REAL)
          log(texto, nivel)          mensajes para la consola de la pestana
          on_state(dict)             estado para pintar la pestana (~15 Hz)
 
@@ -39,6 +40,7 @@ BEAT_PERIOD_S = 0.1      # latido del dead-man (el firmware espera < 300 ms)
 SEND_EPS = 0.05          # grados / mm: no se reenvia si la consigna casi no cambio
 LINK_TIMEOUT_S = 0.4     # sin /wiimote/joy por mas de esto = Wiimote perdido
 STATE_PERIOD_S = 0.066   # ~15 Hz hacia la interfaz
+PUMP_SYNC_GRACE_S = 0.6  # tras pulsar A, ignorar VAC de /scara/limits (aun no refleja el cambio)
 MAX_DT_S = 0.1           # un tick mas lento que esto se trata como 0.1 s
 
 # Mismos textos que gui/point_to_point_tab.py (REASONS), resumidos.
@@ -60,7 +62,7 @@ def real_pose(d):
 class WiimoteBridge:
     def __init__(self, robot_params, send_joints, deadman_beat, deadman_release,
                  emergency_stop, log=None, on_state=None, calibrate=None,
-                 clock=time.monotonic):
+                 clock=time.monotonic, pump=None):
         """robot_params: {'d1', 'd2', ...} en mm (los mismos de la pestana DK)."""
         self._lock = threading.RLock()
         self._clock = clock
@@ -72,6 +74,9 @@ class WiimoteBridge:
         self._log = lambda text, level='info': log(text, level)   # siempre (texto, nivel)
         self._on_state = on_state or (lambda state: None)
         self._calibrate = calibrate         # pide a wiimote_node medir de nuevo el sesgo
+        self._pump = pump                   # pump(on): bomba de vacio (None = sin bomba)
+        self._vac_real = None               # VAC de /scara/limits (estado real de la bomba)
+        self._pump_cmd_t = -1e9             # hora del ultimo cambio pedido con A
 
         self.ctrl = WiimoteController(robot_params['d1'], robot_params['d2'], WiimoteParams())
         self.enabled = False
@@ -107,6 +112,12 @@ class WiimoteBridge:
     def on_limits(self, d):
         with self._lock:
             self.ctrl.set_actual(real_pose(d))
+            if 'VAC' in d:
+                self._vac_real = bool(d['VAC'])
+                # Con el robot real, el estado de A sigue al de la bomba (p. ej. STOP la apaga);
+                # se ignora un instante tras pulsar A para no pisar el cambio recien pedido.
+                if not self.dry_run and self._clock() - self._pump_cmd_t > PUMP_SYNC_GRACE_S:
+                    self.ctrl.pump = self._vac_real
 
     def on_ik_result(self, r):
         with self._lock:
@@ -150,6 +161,8 @@ class WiimoteBridge:
             self.ctrl.reset(self._buttons)
             self.ctrl.simulate = on
             self.ctrl.idle_sync(force=True)   # la simulacion arranca en la posicion real
+            if not on and self._vac_real is not None:
+                self.ctrl.pump = self._vac_real
             self._log('Modo simulacion: no se manda nada al robot' if on else
                       'Modo REAL: el robot se mueve mientras mantengas B')
             self._emit_state(force=True)
@@ -216,6 +229,14 @@ class WiimoteBridge:
                           else 'B presionado: moviendo')
             elif kind == 'blocked':
                 self._log('Limite: no se puede seguir en esa direccion', 'warn')
+            elif kind == 'pump':
+                on = text == 'on'
+                if self.dry_run or self._pump is None:
+                    self._log(f'Bomba {"ON" if on else "OFF"} (simulacion: no se manda)')
+                else:
+                    self._pump_cmd_t = self._clock()
+                    self._pump(on)
+                    self._log(f'Bomba {"ON" if on else "OFF"}')
             elif kind == 'stop':
                 self._log('HOME: paro de emergencia', 'error')
                 self._stop_motion()
@@ -280,6 +301,7 @@ class WiimoteBridge:
                 'moving': self._moving,
                 'blocked': c.blocked,
                 'homed': c.actual is not None,
+                'pump': c.pump,
                 'q': dict(c.q),
                 'xy': (x, y),
                 'codo': c.codo,

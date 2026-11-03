@@ -80,7 +80,8 @@ class ScaraWebNode(Node):
             emergency_stop=self.emergency_stop,
             log=lambda text, level: self._push('wiimote_log', (text, level)),
             on_state=self._on_wiimote_state,
-            calibrate=lambda: self._wiimote_cmd_pub.publish(String(data='calibrate')))
+            calibrate=lambda: self._wiimote_cmd_pub.publish(String(data='calibrate')),
+            pump=self.pump_set)
         self.create_subscription(Joy, 'wiimote/joy', self._on_wiimote_joy, 10)
         self.create_subscription(Imu, 'wiimote/imu', self._on_wiimote_imu, 10)
         self.create_timer(0.02, self.wiimote.tick)
