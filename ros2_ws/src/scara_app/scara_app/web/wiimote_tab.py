@@ -149,7 +149,7 @@ class WiimoteTab:
     def _on_state(self, s, force=False):
         now = time.monotonic()
         key = (s['enabled'], s['dry_run'], s['link'], s['mode'], s['held'],
-               s['blocked'], s['homed'])
+               s['blocked'], s['homed'], s['pump'])
         if not force and key == self._last_key and now - self._last_ui < REFRESH_S:
             return
         self._last_key, self._last_ui = key, now
@@ -167,7 +167,7 @@ class WiimoteTab:
                                  else 'DK · cinemática directa  (botón 2)')
         if ik:
             self.hint_label.set_text('D-pad: ↑↓ = X, ←→ = Y · +/− = z · mantén B para mover · '
-                                     'botón 2 = modo DK · HOME = paro')
+                                     'A = bomba ON/OFF · botón 2 = modo DK · HOME = paro')
         else:
             ax = p['gyro_axes']
             self.hint_label.set_text(
@@ -175,7 +175,7 @@ class WiimoteTab:
                 'mueve hasta que vuelvas al centro. '
                 + ' · '.join(f"{JOINT_LABELS[j]} ← eje {ax[j][0]}{'(−)' if ax[j][1] < 0 else ''}"
                              for j in JOINTS)
-                + ' · mantén B · botón 1 = modo IK · HOME = paro')
+                + ' · mantén B · A = bomba ON/OFF · botón 1 = modo IK · HOME = paro')
 
         if not s['enabled']:
             held, held_color = 'B: desactivado', t.TEXT_MUTED
@@ -186,6 +186,9 @@ class WiimoteTab:
             held, held_color = 'B: suelto', t.TEXT_MUTED
         if s['blocked'] and s['held']:
             held, held_color = held + '  ·  LÍMITE', t.CONNECTED
+        if s['enabled']:
+            pump = 'Bomba: ' + ('ON' if s['pump'] else 'OFF') + (' (simulación)' if s['dry_run'] else '')
+            held += '  ·  ' + pump
         self.held_label.set_text(held)
         self.held_label.style(f'color:{held_color}')
 

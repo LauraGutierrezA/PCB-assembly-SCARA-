@@ -18,7 +18,7 @@ Mueve el SCARA con un Wiimote (Bluetooth al PC del robot). Funciona en la interf
 | 2 | Modo DK: el giro mueve th1 / th2 / z (estilo joystick) |
 | B | Dead-man: solo se mueve mientras se mantiene B |
 | HOME | Paro de emergencia (manda `stop` y desactiva el control) |
-| A | Sin funcion |
+| A | Bomba de vacio: cada pulsacion la enciende o la apaga (en simulacion solo se muestra; HOME la apaga) |
 
 Cambiar de modo, o HOME, exige soltar y volver a presionar B.
 

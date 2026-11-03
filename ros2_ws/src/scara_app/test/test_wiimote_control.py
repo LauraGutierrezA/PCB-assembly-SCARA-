@@ -432,3 +432,53 @@ def test_zona_muerta_dk_por_defecto_es_25_grados():
     assert c.params.dead_angle_deg == 25.0
     run(c, 1.0, {'B'}, {'x': 20.0, 'y': 0.0, 'z': 0.0})      # 20 grados < 25: no se mueve
     assert c.q['th1'] == BENT['th1']
+
+
+# ---------------------------------------------------------------- Boton A: bomba
+def test_a_alterna_la_bomba_y_home_la_apaga():
+    c = make()
+    assert c.pump is False
+    for expected in (True, False, True):
+        c.update(DT, {'A'}, STILL)          # flanco de subida
+        c.update(DT, set(), STILL)          # soltar
+        assert c.pump is expected
+    assert [e for e in c.pop_events() if e[0] == 'pump'] == [('pump', 'on'), ('pump', 'off'),
+                                                              ('pump', 'on')]
+    c.update(DT, {'HOME'}, STILL)
+    assert c.pump is False
+
+
+def test_a_mantenido_no_repite():
+    c = make()
+    run(c, 1.0, {'A'})
+    assert c.pump is True
+
+
+def test_bridge_a_manda_la_bomba_solo_en_modo_real():
+    sent = []
+    now = [0.0]
+    b = WiimoteBridge({'d1': D1, 'd2': D2}, send_joints=lambda *a: None, deadman_beat=lambda: None,
+                      deadman_release=lambda: None, emergency_stop=lambda: None,
+                      clock=lambda: now[0], pump=sent.append)
+
+    def press(names):
+        b.on_joy(names)
+        b.on_imu(0, 0, 0)
+        now[0] += 0.02
+        b.tick()
+
+    b.set_enabled(True)
+    press([])
+    press(['A']); press([])                 # simulacion: no manda nada
+    assert sent == [] and b.snapshot()['pump'] is True
+    b.set_dry_run(False)
+    b.on_limits({'VAC': 1})                 # robot real: sigue al estado de la bomba
+    assert b.snapshot()['pump'] is True
+    press(['A']); press([])                 # -> OFF
+    assert sent == [False] and b.snapshot()['pump'] is False
+    b.on_limits({'VAC': 1})                 # lectura vieja justo despues de pulsar: se ignora
+    assert b.snapshot()['pump'] is False
+    now[0] += 1.0
+    b.on_limits({'VAC': 0})
+    press(['A']); press([])
+    assert sent == [False, True]
