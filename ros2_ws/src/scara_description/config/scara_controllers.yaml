@@ -1,0 +1,26 @@
+# Controladores del gemelo en Gazebo (los carga el plugin gz_ros2_control del xacro con use_gz:=true).
+#
+# El puente (scara_twin) publica las 3 posiciones en
+#   /forward_position_controller/commands   (std_msgs/Float64MultiArray)
+# en este orden: joint1 [rad], joint2 [rad], joint3 [m].
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+
+# El plugin mueve cada articulacion con velocidad = ganancia * error * update_rate
+# (constante de tiempo = 1 / (ganancia * update_rate)). Con 0.5 y 100 Hz son ~20 ms.
+# La documentacion de gz_ros2_control recomienda no pasar de 1 para evitar oscilaciones.
+gz_ros_control:
+  ros__parameters:
+    position_proportional_gain: 0.5

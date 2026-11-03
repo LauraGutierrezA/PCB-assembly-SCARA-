@@ -36,8 +36,10 @@ In this repository you will find all the code for our Robotics and Digital Contr
 | `firmware/components/observers` | Luenberger observer + Kalman filter for each motor (current and speed) |
 | `firmware/components/motor_test` | Open-loop motor test (circuit test tab) |
 | `ros2_ws/src/scara_app` | ROS 2 package: web GUI, desktop GUI (PyQt5), trajectory planner, Wiimote control |
+| `ros2_ws/src/scara_description` | Digital twin model: URDF/xacro, RViz config, Gazebo controllers |
+| `ros2_ws/src/scara_twin` | Digital twin bridge (`/scara/limits` → `/joint_states` and Gazebo), fake robot, launch files |
 | `matlab/` | Identification, controller design (`NPI_Proyecto.mlx`), kinematics (`DKeIKmlx.mlx`) and observers (`LabIV_Sate_Observers.mlx`) |
-| `tools/` | One-command launcher (`scara.launch.py` + `scara_prep.sh`) and patch scripts |
+| `tools/` | One-command launcher (`scara.launch.py` + `scara_prep.sh`) and patch scripts. `tools/gemelo/` holds the optional firmware patch for the twin |
 
 ## Hardware
 
@@ -86,12 +88,16 @@ This builds and flashes the ESP32, builds `scara_app`, then opens the micro-ROS 
 | `port:=` | `/dev/ttyUSB0` | ESP32 serial port, used for flashing and for the agent |
 | `baud:=` | `115200` | Agent baud rate |
 | `idf:=<export.sh>` | `$IDF_PATH` or `~/esp/esp-idf` | ESP-IDF environment |
+| `twin:=` | `none` | Digital twin: `rviz` or `gazebo`. Also builds `scara_description` and `scara_twin`. See [Digital twin](#digital-twin-rviz--gazebo) |
 
 Examples:
 ```bash
 ros2 launch ~/scara_ws/tools/scara.launch.py zip:=~/Downloads/Observadores_v1.zip
 ros2 launch ~/scara_ws/tools/scara.launch.py flash:=false
+ros2 launch ~/scara_ws/tools/scara.launch.py twin:=rviz
 ```
+
+Run **one** of these commands at a time. If the ESP32 is not on `/dev/ttyUSB0`, check with `ls /dev/ttyUSB* /dev/ttyACM*` and pass `port:=`.
 
 ESP-IDF runs in a clean environment without ROS sourced, because the micro-ROS ESP-IDF component fails if ROS 2 is loaded in the same shell. The full build log goes to `firmware/build_last.log`.
 
@@ -138,6 +144,48 @@ The header always shows the ESP32 connection, the current state and a **STOP** b
 
 Leaving **Trayectoria** cancels the cycle, and leaving **Wiimote** disarms it. **Observadores** is the exception: you can switch to it without stopping anything, and it shows the same dead-man as the tab you came from.
 
+## Digital twin (RViz / Gazebo)
+
+The twin mirrors the real robot in RViz and, optionally, Gazebo. It only **reads** from the robot: it never publishes on `/scara/cmd` or `/scara/target`, so it cannot move the real arm. Full details are in `GEMELO_LEEME.md`.
+
+> **Status:** tested without hardware (fake robot, unit tests, xacro). **Not yet tested with the real robot, RViz or Gazebo.** If you have the robot, please try it and report back.
+
+Requirements (once):
+```bash
+sudo apt install ros-jazzy-xacro ros-jazzy-robot-state-publisher \
+                 ros-jazzy-joint-state-publisher-gui ros-jazzy-rviz2
+# Gazebo only:
+sudo apt install ros-jazzy-ros-gz ros-jazzy-gz-ros2-control ros-jazzy-ros2-controllers
+```
+
+With the robot:
+```bash
+ros2 launch ~/scara_ws/tools/scara.launch.py twin:=rviz      # or twin:=gazebo
+```
+
+Without the robot (a fake robot moves on its own):
+```bash
+source /opt/ros/jazzy/setup.bash && cd ~/scara_ws/ros2_ws
+colcon build --packages-select scara_description scara_twin && source install/setup.bash
+ros2 launch scara_description display.launch.py      # model only, with joint sliders
+ros2 launch scara_twin twin.launch.py fake:=true      # RViz
+ros2 launch scara_twin twin_gazebo.launch.py fake:=true
+```
+
+| `/scara/limits` | Twin joint |
+|---|---|
+| `Q1` [deg] | `joint1` = Q1·π/180 (±85°) |
+| `Q2` [deg] | `joint2` = Q2·π/180 (±90°) |
+| `Q3` [mm above the floor, 0–109.2] | `joint3` = (Q3 − 202)/1000 m |
+
+The twin stays at the parking pose (z = 54.6 mm) until the robot reports `CAL=1`. The Z limits must match `M3_*_MM` in `homing_pro.c`, `JOINT_LIMITS` in `robot_model.py`, `scara_twin/conversions.py` and `z_min`/`z_max` in the xacro.
+
+**Optional firmware patch (`/scara/joints`, 25 Hz).** Without it, the twin follows `/scara/limits` at about 10 Hz. It adds a 5th micro-ROS publisher, so the micro-ROS library **must** be rebuilt. If it is not, the ESP32 will not connect to the agent:
+```bash
+cd ~/scara_ws && git apply tools/gemelo/fase4_scara_joints.patch
+cd firmware && idf.py clean-microros && idf.py build && idf.py -p /dev/ttyUSB0 flash   # ESP-IDF shell, no ROS
+```
+
 ## ROS 2 interface (ESP32 ↔ PC)
 
 | Topic | Type | Direction | Content |
@@ -149,6 +197,8 @@ Leaving **Trayectoria** cancels the cycle, and leaving **Wiimote** disarms it. *
 | `/scara/ik` | String | ESP32 → PC | IK result (`OK …` / `ERR … reason=…`) |
 | `/scara/limits` | String | ESP32 → PC | End stops, encoders, joint positions, calibration, arrival, pump, servo, per-motor error and voltage |
 | `/scara/obs` | Float32MultiArray | ESP32 → PC | 25 Hz, best effort: `[n, M1: w_meas w_luen w_kal i_luen i_kal, M2…, M3…]`. Only published while someone is viewing the Observadores tab |
+| `/scara/joints` | Float32MultiArray | ESP32 → PC | Only with the optional twin patch. 25 Hz, best effort: `[Q1, Q2, Q3, Q4, CAL]` |
+| `/joint_states` | JointState | PC (`scara_twin`) | Twin joints for RViz (`joint1`, `joint2` in rad; `joint3` in m) |
 
 ## Configuration knobs
 
