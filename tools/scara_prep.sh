@@ -13,6 +13,7 @@
 #       firmware/build_last.log)
 #    3. idf.py -p <puerto> flash
 #    4. colcon build --packages-select scara_app
+#       (+ scara_description scara_twin si SCARA_TWIN = rviz o gazebo: GEMELO)
 #
 #  ESP-IDF se ejecuta en un entorno LIMPIO (sin ROS cargado): el componente
 #  de micro-ROS para ESP-IDF falla si ROS 2 esta "sourceado" en la misma
@@ -32,6 +33,7 @@ DO_FLASH="${SCARA_FLASH:-${2:-true}}"
 DO_WEB="${SCARA_WEB:-${3:-true}}"
 PORT="${SCARA_PORT:-${4:-/dev/ttyUSB0}}"
 IDF_EXPORT="${SCARA_IDF-${5:-}}"
+TWIN="${SCARA_TWIN:-${6:-none}}"          # GEMELO: none | rviz | gazebo
 WS="${WS/#\~/$HOME}"
 
 ZIP="${ZIP/#\~/$HOME}"
@@ -113,14 +115,24 @@ fi
 
 # ---------------------------------------------------------------- 4. web
 if [ "$DO_WEB" = "true" ]; then
-    step "4/4  colcon build scara_app"
+    PKGS="scara_app"
+    if [ "$TWIN" != "none" ]; then        # GEMELO
+        PKGS="scara_app scara_description scara_twin"
+    fi
+    step "4/4  colcon build $PKGS"
     [ -n "$ROS_DISTRO" ] || fail "ROS 2 no esta cargado: source /opt/ros/jazzy/setup.bash"
     cd "$WS/ros2_ws" || fail "no existe $WS/ros2_ws"
-    find src/scara_app -name "*.py" -exec touch {} +
-    colcon build --packages-select scara_app 2>&1 | tail -5
+    for p in $PKGS; do
+        [ -d "src/$p" ] || fail "no existe ros2_ws/src/$p (falta descomprimir el gemelo?)"
+        find "src/$p" -type f -exec touch {} +
+    done
+    colcon build --packages-select $PKGS 2>&1 | tail -5
     [ "${PIPESTATUS[0]}" -eq 0 ] || fail "fallo colcon build"
 else
     step "4/4  Sin compilar la interfaz (web:=false)"
+    if [ "$TWIN" != "none" ] && [ ! -d "$WS/ros2_ws/install/scara_twin" ]; then
+        fail "twin:=$TWIN pero scara_twin no esta compilado: lanza una vez con web:=true"
+    fi
 fi
 
 printf '\n\033[1;32mListo: abriendo agente micro-ROS e interfaz web\033[0m\n'

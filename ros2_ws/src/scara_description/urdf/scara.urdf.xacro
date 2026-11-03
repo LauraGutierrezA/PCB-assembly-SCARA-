@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<!--
+  scara.urdf.xacro - Gemelo digital del SCARA RRP (EIA, Grupo 2-B).
+
+  Modelo con cajas y cilindros, copiado de la clase Robot3D de
+  ros2_ws/src/scara_app/scara_app/web/twin.py (el 3D de la interfaz web), para que
+  RViz y Gazebo muestren el mismo robot. Unidades: metros y radianes.
+
+  Marco: x adelante, y izquierda, z arriba; el piso de la base es z = 0.
+
+  Articulaciones (mismos limites que firmware/components/homing_pro/homing_pro.c):
+    joint1  giro en z, th1 = 0 apunta a +x            -85 .. 85 grados
+    joint2  giro en z, th2 = 0 deja el eslabon 2 alineado con el 1   -90 .. 90 grados
+    joint3  prismatica en z, valor = (Q3 - 202 mm) / 1000
+            Q3 es la altura de la punta sobre el piso (0 .. 109.2 mm).
+            Con joint3 = 0 la punta esta a 202 mm (= Z_TOP de robot_model.py).
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="scara">
+
+  <!-- use_gz:=true agrega lo que necesita Gazebo (world fijo, ros2_control y su plugin).
+       Con false (por defecto) el modelo es el de las fases 1 y 2, para RViz. -->
+  <xacro:arg name="use_gz" default="false"/>
+
+  <!-- ============ Parametros (mm -> m) ============ -->
+  <xacro:property name="d1"      value="0.120"/>   <!-- largo eslabon 1 -->
+  <xacro:property name="d2"      value="0.085"/>   <!-- largo eslabon 2 -->
+  <xacro:property name="d3"      value="0.172"/>   <!-- piso -> cara inferior del eslabon 1 (D3_BASE) -->
+  <xacro:property name="t1"      value="0.030"/>   <!-- espesor eslabon 1 -->
+  <xacro:property name="t2"      value="0.030"/>   <!-- espesor eslabon 2 -->
+  <xacro:property name="z_top"   value="0.202"/>   <!-- Z_TOP: altura de la punta con joint3 = 0 -->
+
+  <!-- Limites -->
+  <xacro:property name="th1_lim" value="${radians(85.0)}"/>
+  <xacro:property name="th2_lim" value="${radians(90.0)}"/>
+  <xacro:property name="z_min"   value="0.0"/>      <!-- M3_BOTTOM_MM -->
+  <xacro:property name="z_max"   value="0.1092"/>   <!-- M3_TOP_MM -->
+
+  <!-- ============ Materiales ============ -->
+  <material name="base_gray"><color rgba="0.23 0.27 0.44 0.80"/></material>
+  <material name="link_blue"><color rgba="0.16 0.50 0.90 1.0"/></material>
+  <material name="tool_orange"><color rgba="0.95 0.55 0.10 1.0"/></material>
+  <material name="tcp_white"><color rgba="0.95 0.95 0.95 1.0"/></material>
+
+  <!-- ============ Macros de geometria ============ -->
+  <xacro:macro name="box_vis" params="sx sy sz x y z mat">
+    <visual>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+      <geometry><box size="${sx} ${sy} ${sz}"/></geometry>
+      <material name="${mat}"/>
+    </visual>
+  </xacro:macro>
+
+  <!-- Cilindro con eje en z (igual que en la escena 3D despues de rotarlo) -->
+  <xacro:macro name="cyl_vis" params="r h x y z mat">
+    <visual>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+      <geometry><cylinder radius="${r}" length="${h}"/></geometry>
+      <material name="${mat}"/>
+    </visual>
+  </xacro:macro>
+
+  <!-- Inercia de una caja que envuelve al eslabon (masa m en kg, caja sx sy sz centrada en x y z).
+       Gazebo la necesita; RViz la ignora. LAS MASAS SON ESTIMADAS, no medidas: pesa las piezas
+       si quieres que la simulacion refleje el robot real. -->
+  <xacro:macro name="box_inertial" params="m sx sy sz x y z">
+    <inertial>
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+      <mass value="${m}"/>
+      <inertia ixx="${m/12*(sy*sy+sz*sz)}" ixy="0" ixz="0"
+               iyy="${m/12*(sx*sx+sz*sz)}" iyz="0"
+               izz="${m/12*(sx*sx+sy*sy)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ============ base_link: columna fija ============ -->
+  <link name="base_link">
+    <xacro:box_inertial m="2.0" sx="0.160" sy="0.090" sz="${d3}" x="-0.045" y="0" z="${d3/2}"/>
+    <xacro:box_vis sx="0.160" sy="0.090" sz="${d3}" x="-0.045" y="0" z="${d3/2}" mat="base_gray"/>
+  </link>
+
+  <!-- ============ Eslabon 1 (marco en z = d3, gira th1) ============ -->
+  <link name="link1">
+    <xacro:box_inertial m="0.35" sx="0.150" sy="0.060" sz="0.102" x="0.060" y="0" z="0.051"/>
+    <xacro:box_vis sx="${d1}" sy="0.060" sz="${t1}" x="${d1/2}" y="0" z="${t1/2}" mat="link_blue"/>
+    <xacro:cyl_vis r="0.030" h="${t1}" x="0"    y="0" z="${t1/2}" mat="link_blue"/>
+    <xacro:cyl_vis r="0.030" h="${t1}" x="${d1}" y="0" z="${t1/2}" mat="link_blue"/>
+    <!-- cilindro vertical (z 202..274 mm) -->
+    <xacro:cyl_vis r="0.018" h="0.072" x="0.0565" y="0" z="0.066" mat="link_blue"/>
+  </link>
+
+  <joint name="joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <origin xyz="0 0 ${d3}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-th1_lim}" upper="${th1_lim}" effort="10" velocity="10.0"/>
+  </joint>
+
+  <!-- ============ Eslabon 2 (marco en x = d1, z = t1 del eslabon 1; gira th2) ============ -->
+  <link name="link2">
+    <xacro:box_inertial m="0.25" sx="0.115" sy="0.055" sz="0.085" x="0.0425" y="0" z="0.0425"/>
+    <xacro:box_vis sx="${d2}" sy="0.055" sz="${t2}" x="${d2/2}" y="0" z="${t2/2}" mat="link_blue"/>
+    <xacro:cyl_vis r="0.0275" h="${t2}" x="0"    y="0" z="${t2/2}" mat="link_blue"/>
+    <xacro:cyl_vis r="0.0275" h="${t2}" x="${d2}" y="0" z="${t2/2}" mat="link_blue"/>
+    <!-- cilindro vertical (z 232..287 mm) -->
+    <xacro:cyl_vis r="0.018" h="0.055" x="0.0145" y="0" z="0.0575" mat="link_blue"/>
+  </link>
+
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="${d1} 0 ${t1}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-th2_lim}" upper="${th2_lim}" effort="10" velocity="10.0"/>
+  </joint>
+
+  <!-- ============ Efector (marco en x = d2 del eslabon 2; sube y baja) ============ -->
+  <link name="tool_link">
+    <xacro:box_inertial m="0.10" sx="0.050" sy="0.034" sz="0.163" x="-0.0167" y="0" z="0.0815"/>
+    <!-- carro -->
+    <xacro:box_vis sx="0.048" sy="0.034" sz="0.018" x="-0.0167" y="0" z="0.013" mat="tool_orange"/>
+    <!-- boquilla -->
+    <xacro:cyl_vis r="0.0022" h="0.010" x="0" y="0" z="0.005" mat="tool_orange"/>
+    <!-- dos varillas (tornillo y guia) -->
+    <xacro:cyl_vis r="0.00425" h="0.135" x="0"        y="0" z="0.0895" mat="tool_orange"/>
+    <xacro:cyl_vis r="0.00425" h="0.135" x="-0.03335" y="0" z="0.0895" mat="tool_orange"/>
+    <!-- placa superior -->
+    <xacro:box_vis sx="0.048" sy="0.024" sz="0.006" x="-0.0167" y="0" z="0.160" mat="tool_orange"/>
+  </link>
+
+  <joint name="joint3" type="prismatic">
+    <parent link="link2"/>
+    <child link="tool_link"/>
+    <origin xyz="${d2} 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <!-- valor = (Q3 - 202 mm)/1000  ->  Q3 = 0 mm: -0.202 m ; Q3 = 109.2 mm: -0.0928 m -->
+    <limit lower="${z_min - z_top}" upper="${z_max - z_top}" effort="50" velocity="1.0"/>
+  </joint>
+
+  <!-- ============ Punta (TCP): marca la posicion que reporta Q3 ============ -->
+  <link name="tcp">
+    <visual>
+      <geometry><sphere radius="0.005"/></geometry>
+      <material name="tcp_white"/>
+    </visual>
+  </link>
+
+  <joint name="tcp_joint" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============ Solo con use_gz:=true (Gazebo) ============ -->
+  <xacro:if value="$(arg use_gz)">
+
+    <!-- Sin esto la base caeria por gravedad -->
+    <link name="world"/>
+    <joint name="world_fixed" type="fixed">
+      <parent link="world"/>
+      <child link="base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Las 3 articulaciones se mandan por posicion (JointGroupPositionController).
+         joint3 arranca en la posicion de homing (Q3 = 54.6 mm -> -0.1474 m):
+         con 0 quedaria fuera de su limite. -->
+    <ros2_control name="GazeboSimSystem" type="system">
+      <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
+      <joint name="joint1">
+        <command_interface name="position"/>
+        <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="joint2">
+        <command_interface name="position"/>
+        <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="joint3">
+        <command_interface name="position"/>
+        <state_interface name="position"><param name="initial_value">-0.1474</param></state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+
+    <gazebo>
+      <plugin filename="libgz_ros2_control-system.so"
+              name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find scara_description)/config/scara_controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+
+  </xacro:if>
+
+</robot>

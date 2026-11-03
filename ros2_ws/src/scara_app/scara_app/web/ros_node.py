@@ -178,6 +178,25 @@ class ScaraWebNode(Node):
                     1 if codo >= 0 else -1)]
         self._target_pub.publish(msg)
 
+    def send_goal(self, x: float, y: float, z: float, params: dict, codo: int,
+                  duration: float, goal_id: int):
+        """TRAYECTORIA (perfil en el ESP32): UNA meta por tramo, 13 valores en
+        /scara/target: [x, y, z, d1..d6, av, codo, T, id]. El ESP32 interpola
+        hasta la meta en T s (profile.c) y reporta el avance en /scara/limits
+        (PG = 0..100, GS = id del tramo en curso). Sin log: van varios por GO TO."""
+        msg = Float32MultiArray()
+        msg.data = [float(v) for v in (x, y, z,
+                    params['d1'], params['d2'], params['d3'],
+                    params['d4'], params['d5'], params['d6'], params['av'],
+                    1 if codo >= 0 else -1, duration, goal_id)]
+        self._target_pub.publish(msg)
+
+    def set_ff_gain(self, gain: float):
+        """TRAYECTORIA: ganancia del feedforward de velocidad (controlRST.c), en vivo.
+        El firmware la satura a [FF_GAIN_MIN, FF_GAIN_MAX] y la confirma en
+        /scara/limits como FF=<gain*100>."""
+        self.send_command(f'ff {float(gain):.3f}')
+
     def vacuum(self, on: bool):
         """Bomba de la ventosa: PICK -> True, PLACE -> False."""
         self.send_command('vac1' if on else 'vac0')
