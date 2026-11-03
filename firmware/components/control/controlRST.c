@@ -200,9 +200,51 @@ float control_get_ff_gain(void) { return ff_gain; }
  * que al volver a arrancar no salte. Sin compensacion de zona muerta: el
  * lazo interno tiene integrador.
  */
-#define DEAD_TOL_COUNTS   10
-#define DEAD_OUT_COUNTS   25
+/* Por motor. M3 (tornillo, 4800 cuentas/mm): 10 cuentas eran 0.002 mm, menos
+ * de lo que el tornillo puede sostener (se quedaba oscilando y ARR nunca
+ * llegaba). 50 cuentas = 0.01 mm, 120 = 0.025 mm.
+ *                                      M1   M2   M3                        */
+static const int DEAD_TOL_COUNTS[NUM_JOINTS] = { 10, 10, 50 };   /* entra a "llego" */
+static const int DEAD_OUT_COUNTS[NUM_JOINTS] = { 25, 25, 120 };  /* sale de "llego" */
 static bool llego[NUM_JOINTS];
+/* true: llego AL TOPE (perfil terminado y final de carrera presionado hacia
+ * la meta). Cuenta como llegada para ARR (cambio A de la trayectoria). */
+static bool al_tope[NUM_JOINTS];
+
+
+/* ============================================================
+ *        COMPENSACION DE ZONA MUERTA (mismos valores que control.c)
+ * ============================================================
+ * Con el perfil del ESP32 el final del tramo es a velocidad casi nula,
+ * justo donde manda la friccion: el motor se pegaba antes de la meta o
+ * oscilaba (pegarse - soltarse) alrededor de ella.
+ * Mientras el motor NO ha llegado (error > DEAD_TOL_COUNTS), a la salida del
+ * interno se le suma V_DEAD en el sentido del movimiento pedido (w_cmd; si
+ * w_cmd es casi 0, el sentido del error). Va POR FUERA de la memoria del RST:
+ * en u[k-1] se sigue guardando la salida propia del controlador, asi la
+ * ecuacion en diferencias del diseno no cambia.
+ * V_DEAD = (% minimo con el que arranca el motor) / 100 * 12 V.
+ * OJO: medidos con el L298N (igual que en control.c); con el TB6612 hay que
+ * volver a medirlos. Con 0.0f no se compensa.
+ */
+static const float V_DEAD[NUM_JOINTS] = { 17.0f/100.0f*12.0f, 10.0f/100.0f*12.0f, 7.0f/100.0f*12.0f };
+#define W_DEAD_MIN   1.0f       /* rad/s: por debajo se usa el signo del error */
+
+
+/* ============================================================
+ *        DIAGNOSTICO (lo publica main.c en /scara/limits)
+ * ============================================================ */
+static volatile int32_t diag_err[NUM_JOINTS];   /* error en cuentas (sentido del motor) */
+static volatile float   diag_u[NUM_JOINTS];     /* voltaje aplicado [V] */
+
+void control_get_diag(int32_t err_counts[3], float u_volts[3], uint8_t state[3])
+{
+    for (int i = 0; i < NUM_JOINTS; i++) {
+        err_counts[i] = diag_err[i];
+        u_volts[i] = diag_u[i];
+        state[i] = llego[i] ? (al_tope[i] ? 2 : 1) : 0;
+    }
+}
 
 
 /* ============================================================
@@ -220,7 +262,7 @@ void control_set_reference(const joints_t *r)
     ref = *r;
     has_ref = true;
     ref_seq++;
-    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    for (int i = 0; i < NUM_JOINTS; i++) { llego[i] = false; al_tope[i] = false; }
     portEXIT_CRITICAL(&ref_lock);
 }
 
@@ -261,7 +303,7 @@ void control_set_goal(const joints_t *goal, float duration_s, uint32_t id)
     ref = *goal;
     has_ref = true;
     ref_seq++;
-    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    for (int i = 0; i < NUM_JOINTS; i++) { llego[i] = false; al_tope[i] = false; }
     portEXIT_CRITICAL(&ref_lock);
 }
 
@@ -490,21 +532,35 @@ static void control_step(const joints_t *r, bool run_outer, bool moving)
          *    perfil se mueve NO aplica: si no, el motor frenaria y se le
          *    borraria la memoria cada vez que alcanza a la referencia. */
         const float err_cts = fabsf(cr - (float)c);
+        const float err_motor = counts_to_motor_rad(i, cr - (float)c);   /* con signo */
+        diag_err[i] = (int32_t)lroundf(err_motor / MOTOR_RAD_PER_COUNT);
+        /* Cambio A: perfil terminado y el final de carrera HACIA la meta esta
+         * presionado -> no puede avanzar mas: se da por llegado ("al tope").
+         * (err_motor > 0 -> u > 0 -> (1,0) -> hacia el final L.) */
+        const bool tope = !moving &&
+            ((err_motor > 0.0f && limit_l_pressed(i)) || (err_motor < 0.0f && limit_r_pressed(i)));
         if (moving) {
             llego[i] = false;
+            al_tope[i] = false;
+        } else if (tope && err_cts > (float)DEAD_TOL_COUNTS[i]) {
+            llego[i] = true;
+            al_tope[i] = true;
         } else if (llego[i]) {
-            if (err_cts > (float)DEAD_OUT_COUNTS) {
+            al_tope[i] = false;
+            if (err_cts > (float)DEAD_OUT_COUNTS[i]) {
                 llego[i] = false;
                 reset_motor(i);          /* vuelve a arrancar desde cero */
             }
-        } else if (err_cts <= (float)DEAD_TOL_COUNTS) {
+        } else if (err_cts <= (float)DEAD_TOL_COUNTS[i]) {
             llego[i] = true;
+            al_tope[i] = false;
         }
 
         if (llego[i]) {
             /* Ya llego: freno, y la memoria queda lista para arrancar limpio */
             reset_motor(i);
             escribir_actuador(i, 0.0f);
+            diag_u[i] = 0.0f;
             continue;
         }
 
@@ -540,6 +596,14 @@ static void control_step(const joints_t *r, bool run_outer, bool moving)
         float u = rst_interno(i, w_cmd, omega_k);
         aux[i].first = false;
 
+        /* 5b. Zona muerta (fuera de la memoria del RST): aqui el motor aun no
+         *     llego (si hubiera llegado, el paso 2 ya hizo continue). */
+        if (V_DEAD[i] > 0.0f) {
+            const float dir = (fabsf(w_cmd) > W_DEAD_MIN) ? w_cmd : err_motor;
+            if (dir > 0.0f)      u = limitar(u + V_DEAD[i], -U_MAX_V, U_MAX_V);
+            else if (dir < 0.0f) u = limitar(u - V_DEAD[i], -U_MAX_V, U_MAX_V);
+        }
+
         /* 6. Finales de carrera: si el motor esta tocando el final hacia
          *    el que lo mandan, se para. Se limpia la memoria del interno
          *    para que el integrador no se cargue contra el final. */
@@ -548,6 +612,7 @@ static void control_step(const joints_t *r, bool run_outer, bool moving)
             mem_in[i].u1 = 0.0f;  mem_in[i].u2 = 0.0f;
         }
 
+        diag_u[i] = u;
         escribir_actuador(i, u);
     }
 }

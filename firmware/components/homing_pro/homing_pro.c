@@ -24,13 +24,17 @@
 #define M1_L_DEG        (-85.0f)
 #define M1_R_DEG        ( 85.0f)
 #define M2_L_DEG        (-90.0f)
-#define M3_TOP_MM       (126.0f)    /* final UP (L): 126 mm del piso */
-#define M3_BOTTOM_MM    ( 19.3f)    /* final DOWN (R): 19.3 mm del piso */
+/* M3 medido con la herramienta montada (nov 2026): la punta queda en 0 mm
+ * (el piso) al tocar el final DOWN y en 109.2 mm al tocar el final UP.
+ * (Antes: 126 / 19.3 mm, sin la herramienta.) Deben coincidir con
+ * JOINT_LIMITS['z'] de ros2_ws/.../robot_model.py. */
+#define M3_TOP_MM       (109.2f)    /* final UP (L): 109.2 mm del piso */
+#define M3_BOTTOM_MM    (  0.0f)    /* final DOWN (R): 0 mm (el piso) */
 
 /* Donde se estaciona cada motor al final */
 #define M1_HOME_DEG     (0.0f)
 #define M2_HOME_DEG     (0.0f)
-#define M3_HOME_MM      ((M3_TOP_MM + M3_BOTTOM_MM) / 2.0f)   /* 72.65 mm del piso (53.35 mm de cada final) */
+#define M3_HOME_MM      ((M3_TOP_MM + M3_BOTTOM_MM) / 2.0f)   /* 54.6 mm del piso (la mitad) */
 
 /* Rango permitido para M2 (solo tiene final en -90) */
 #define M2_MAX_DEG      (90.0f)
@@ -292,7 +296,7 @@ static void do_calib(int m)
         c.q_min = deg2rad(M2_L_DEG);
         c.q_max = deg2rad(M2_MAX_DEG);
     } else {
-        /* M3: dos puntos, 123 mm arriba (L) y 18 mm abajo (R) */
+        /* M3: dos puntos, M3_TOP_MM arriba (L) y M3_BOTTOM_MM abajo (R) */
         const int32_t span = c_mark_l[2] - c_mark_r[2];   /* arriba - abajo */
         if (span == 0) { fail("NO_ENCODER"); return; }
         c.c_ref = c_mark_r[2];

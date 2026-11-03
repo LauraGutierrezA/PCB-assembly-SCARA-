@@ -128,7 +128,7 @@
 #define TARGET_LEN            11      /* x y z d1 d2 d3 d4 d5 d6 av codo */
 #define TARGET_LEN_GOAL       13      /* ... + T [s] + id  (trayectoria, perfil en el ESP32) */
 #define TEST_BUF_LEN          48
-#define LIMITS_BUF_LEN        200
+#define LIMITS_BUF_LEN        300     /* con el diagnostico AR/EC/U de la trayectoria */
 
 /* El periodo de control (8 ms) necesita ticks de 1 ms: CONFIG_FREERTOS_HZ=1000
  * (menuconfig -> Component config -> FreeRTOS -> Kernel -> configTICK_RATE_HZ). */
@@ -259,7 +259,7 @@ static void target_callback(const void *msgin)
             const joints_t q_ctrl = { q.th1, q.th2, target.z };
 
             /* Rechazar si alguna articulacion queda fuera de su rango
-             * (M1, M2: -90..+90 grados; M3: 19.3..126 mm). La consigna NO se
+             * (M1, M2: -90..+90 grados; M3: 0..109.2 mm). La consigna NO se
              * aplica y se borra la anterior: el robot se queda donde esta
              * (aunque se presione el dead-man). */
             const float qv[3] = { q_ctrl.th1, q_ctrl.th2, q_ctrl.th3 };
@@ -356,6 +356,19 @@ static void limits_publish_tick(void)
                  effector_vacuum_on() ? 1 : 0, effector_servo_deg(),
                  CONTROL_USE_RST ? 1 : 0, prof_progress(), (unsigned long)prof_goal_id(),
                  (int)(control_get_ff_gain() * 100.0f + 0.5f));
+    }
+    /* TRAYECTORIA (diagnostico por motor): AR = llego M1 M2 M3, EC = error
+     * en cuentas, U = voltaje aplicado. */
+    {
+        int32_t ec[3];
+        float   uv[3];
+        uint8_t ar[3];        /* 0 no llega, 1 llego, 2 llego al tope (final de carrera) */
+        control_get_diag(ec, uv, ar);
+        size_t len_ = strlen(limits_buf);
+        snprintf(limits_buf + len_, sizeof(limits_buf) - len_,
+                 " AR=%d%d%d EC1=%ld EC2=%ld EC3=%ld U1=%.1f U2=%.1f U3=%.1f",
+                 ar[0], ar[1], ar[2],
+                 (long)ec[0], (long)ec[1], (long)ec[2], uv[0], uv[1], uv[2]);
     }
     TickType_t now = xTaskGetTickCount();
     if (strcmp(limits_buf, limits_last) == 0 &&

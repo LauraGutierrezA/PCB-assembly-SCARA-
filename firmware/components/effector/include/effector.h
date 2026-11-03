@@ -5,13 +5,13 @@
  *                    1 = bomba encendida (PICK), 0 = apagada (PLACE).
  *   Servo de giro  : Tower Pro 9 g en PIN_SERVO (PWM 50 Hz, LEDC timer 1).
  *                    Angulo de la boquilla de -90 a +90 grados (0 = centro).
- *                    Arranca en 0. Los giros "rot" son RELATIVOS (+90 / -90) y
+ *                    Arranca en 0. Los giros "rot" son RELATIVOS (cualquier angulo entero) y
  *                    se saturan en los extremos; "servo" fija un angulo ABSOLUTO.
  *
  * Comandos por /scara/cmd (los interpreta effector_handle_cmd):
  *   "vac1"      -> bomba ON
  *   "vac0"      -> bomba OFF
- *   "rot +90"   -> gira +90 grados desde el angulo actual (tambien "rot -90")
+ *   "rot +45"   -> gira +45 grados desde el angulo actual (entero, -180..+180; satura en -90..+90)
  *   "servo 30"  -> pone el servo en 30 grados (absoluto, -90..+90; prueba de circuito)
  *   "stop"      -> apaga la bomba (y main.c sigue con su "stop" normal)
  *

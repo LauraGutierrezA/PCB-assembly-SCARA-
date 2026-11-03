@@ -84,9 +84,14 @@ static const float V_DEAD[NUM_JOINTS] = { 17.0f/100.0f*12.0f, 10.0f/100.0f*12.0f
 /* Histeresis de "llego": entra con menos de DEAD_TOL_COUNTS de error y solo
  * vuelve a empujar si se aleja mas de DEAD_OUT_COUNTS. Evita que el motor
  * cabecee alrededor del objetivo (empujar - pasarse - empujar...). */
-#define DEAD_TOL_COUNTS   10      /* entra a "llego" con menos de 10 cuentas */
-#define DEAD_OUT_COUNTS   25      /* sale de "llego" solo si se aleja mas de 25 */
+/* Por motor (M3: 10 cuentas = 0.002 mm era demasiado fino para el tornillo;
+ * 50 = 0.01 mm, 120 = 0.025 mm). Igual que en controlRST.c.  M1  M2  M3   */
+static const int DEAD_TOL_COUNTS[3] = { 10, 10, 50 };   /* entra a "llego" */
+static const int DEAD_OUT_COUNTS[3] = { 25, 25, 120 };  /* sale de "llego" */
 static bool llego[NUM_JOINTS];    /* true: el motor ya llego y esta frenado */
+/* true: llego AL TOPE (perfil terminado y final de carrera presionado hacia
+ * la meta). Cuenta como llegada para ARR (cambio A de la trayectoria). */
+static bool al_tope[NUM_JOINTS];
 
 
 /* ============================================================
@@ -96,7 +101,7 @@ static bool llego[NUM_JOINTS];    /* true: el motor ya llego y esta frenado */
  * Ya no se configuran aqui (antes eran GEAR y HOME_RAD). El homingPRO
  * mide la relacion real cuentas <-> articulacion y el sentido de cada
  * encoder (components/homing_pro). Las relaciones nominales y los valores
- * de los finales (-90/+90 grados, 19.3/126 mm) estan en homing_pro.c.
+ * de los finales (-90/+90 grados, 0/109.2 mm) estan en homing_pro.c.
  */
 
 /* Radianes del EJE DEL MOTOR por cuenta del encoder (unidades de Gpos). */
@@ -133,7 +138,7 @@ void control_set_reference(const joints_t *r)
     has_ref = true;
     ref_seq++;
     /* Consigna nueva: todos los motores vuelven a "no ha llegado" */
-    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    for (int i = 0; i < NUM_JOINTS; i++) { llego[i] = false; al_tope[i] = false; }
     portEXIT_CRITICAL(&ref_lock);
 }
 
@@ -184,7 +189,7 @@ void control_set_goal(const joints_t *goal, float duration_s, uint32_t id)
     ref = *goal;
     has_ref = true;
     ref_seq++;
-    for (int i = 0; i < NUM_JOINTS; i++) llego[i] = false;
+    for (int i = 0; i < NUM_JOINTS; i++) { llego[i] = false; al_tope[i] = false; }
     portEXIT_CRITICAL(&ref_lock);
 }
 
@@ -351,6 +356,19 @@ static void escribir_actuador(int i, float u)
  *                   CICLO DE CONTROL
  * ============================================================ */
 
+/* Diagnostico (lo publica main.c en /scara/limits), igual que controlRST.c */
+static volatile int32_t diag_err[NUM_JOINTS];
+static volatile float   diag_u[NUM_JOINTS];
+
+void control_get_diag(int32_t err_counts[3], float u_volts[3], uint8_t state[3])
+{
+    for (int i = 0; i < NUM_JOINTS; i++) {
+        err_counts[i] = diag_err[i];
+        u_volts[i] = diag_u[i];
+        state[i] = llego[i] ? (al_tope[i] ? 2 : 1) : 0;
+    }
+}
+
 /* Un paso de los 3 lazos (se ejecuta cada CONTROL_TS_MS).
  * moving = true mientras el perfil del ESP32 mueve la referencia. */
 static void control_step(const joints_t *r, bool moving)
@@ -358,17 +376,27 @@ static void control_step(const joints_t *r, bool moving)
     for (int i = 0; i < NUM_JOINTS; i++) {
         float e = error_motor_rad(i, joint_of(r, i));
         float u = controlador(i, e);
+        diag_err[i] = (int32_t)lroundf(e / MOTOR_RAD_PER_COUNT);
 
         /* 1. Zona muerta con histeresis:
          *    - si aun no llega: empujar al menos V_DEAD
          *    - si ya llego: salida 0 (freno) hasta que se aleje mas de
          *      DEAD_OUT_COUNTS. */
         const float err_cts = fabsf(e) / MOTOR_RAD_PER_COUNT;
+        /* Cambio A: perfil terminado y final de carrera presionado HACIA la
+         * meta -> se da por llegado ("al tope"). e > 0 -> u > 0 -> final L. */
+        const bool tope = !moving &&
+            ((e > 0.0f && limit_l_pressed(i)) || (e < 0.0f && limit_r_pressed(i)));
         if (moving) {
             llego[i] = false;        /* perfil en curso: sin freno a mitad de camino */
+            al_tope[i] = false;
+        } else if (tope && err_cts > (float)DEAD_TOL_COUNTS[i]) {
+            llego[i] = true;
+            al_tope[i] = true;
         } else if (llego[i]) {
-            if (err_cts > (float)DEAD_OUT_COUNTS) llego[i] = false;
-        } else if (err_cts <= (float)DEAD_TOL_COUNTS) {
+            al_tope[i] = false;
+            if (err_cts > (float)DEAD_OUT_COUNTS[i]) llego[i] = false;
+        } else if (err_cts <= (float)DEAD_TOL_COUNTS[i]) {
             llego[i] = true;
         }
 
@@ -385,6 +413,7 @@ static void control_step(const joints_t *r, bool moving)
             u = 0.0f;
         }
 
+        diag_u[i] = u;
         escribir_actuador(i, u);
     }
 }

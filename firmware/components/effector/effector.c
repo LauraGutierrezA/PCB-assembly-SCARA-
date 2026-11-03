@@ -122,7 +122,9 @@ bool effector_handle_cmd(const char *data, size_t n)
 
     int delta;
     if (sscanf(line, "rot %d", &delta) == 1) {
-        if (delta == 90 || delta == -90) effector_rotate_rel(delta);
+        /* Giro RELATIVO de cualquier angulo entero (bloque ROTATE de la
+         * trayectoria). Se satura en SERVO_MIN_DEG..SERVO_MAX_DEG. */
+        if (delta != 0 && delta >= -180 && delta <= 180) effector_rotate_rel(delta);
         return true;
     }
     if (sscanf(line, "servo %d", &delta) == 1) {      /* absoluto (prueba de circuito) */

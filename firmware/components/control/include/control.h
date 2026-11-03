@@ -106,4 +106,13 @@ void control_set_goal(const joints_t *goal, float duration_s, uint32_t id);
 void  control_set_ff_gain(float g);
 float control_get_ff_gain(void);
 
+/* TRAYECTORIA (diagnostico): por motor, error de posicion en cuentas del
+ * encoder (con signo, sentido del motor), voltaje aplicado [V] y estado:
+ *   0 = aun no llega
+ *   1 = llego (dentro de su DEAD_TOL_COUNTS)
+ *   2 = llego AL TOPE: el perfil termino y el final de carrera hacia la
+ *       meta esta presionado (no puede avanzar mas: se da por llegado)
+ * main.c lo publica en /scara/limits como AR=<M1><M2><M3> EC1..EC3 U1..U3. */
+void control_get_diag(int32_t err_counts[3], float u_volts[3], uint8_t state[3]);
+
 #endif /* CONTROL_H */
