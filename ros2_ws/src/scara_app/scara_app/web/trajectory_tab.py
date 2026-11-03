@@ -2,7 +2,7 @@
 trajectory_tab.py - Pestana "Trayectoria" (web): ciclo pick & place con bloques.
 
   ┌─────────────────────────────────────────────────────────────────────────┐
-  │ [GO TO POSE] [PICK] [PLACE] [ROTATE]    Z segura  Repet.  [Iniciar] [Detener]
+  │ [GO TO POSE] [PICK] [PLACE] [ROTATE]   Despeje Z  Repet.  [Iniciar] [Detener]
   ├───────────────────────────────────────────────┬─────────────────────────┤
   │ Sandbox: bloques conectados con flechas       │ Estado del ciclo        │
   │  ┌GO TO┐→┌PICK┐→┌GO TO┐→┌PLACE┐ ...            │ Gemelo (consigna/real)  │
@@ -19,10 +19,15 @@ Flujo:
      (boton o barra espaciadora). Al soltar se PAUSA (el tiempo del perfil
      se congela y el firmware frena); al volver a mantener sigue en el
      mismo punto del mismo bloque.
-  3. GO TO POSE: el perfil quintico se muestrea cada TICK_S y cada punto
-     va a /scara/target (stream_target, sin log). Al final espera ARR=1 en
-     /scara/limits (los 3 motores llegaron). PICK/PLACE: "vac1"/"vac0" +
-     espera. ROTATE: "rot +90"/"rot -90" + espera.
+  3. GO TO POSE: cada tramo (subir / viaje XY / bajar) se manda como UNA
+     meta con su duracion (send_goal, 13 valores en /scara/target) y el
+     ESP32 interpola cada 8 ms (firmware/components/control/profile.c).
+     Puntos intermedios: cuando /scara/limits dice PG >= BLEND_PCT (avance
+     del tramo) se manda el siguiente y el ESP32 los superpone, sin frenar.
+     Meta final: se espera PG = 100 y luego ARR = 1 (llegada estricta).
+     Si el ESP32 no confirma un tramo (GS = id), se reenvia con el mismo id.
+     PICK/PLACE: "vac1"/"vac0", confirmacion de VAC y espera.
+     ROTATE: "rot +90"/"rot -90" + espera.
   4. STOP (encabezado), Esc, "Detener", cambiar de pestana, perder el ESP32
      o un rechazo de la IK del firmware -> el ciclo se cancela.
 
@@ -30,16 +35,18 @@ Los parametros del robot (d1..av) son los de Punto a punto por defecto
 (ROBOT_DEFAULTS de gui/point_to_point_tab.py).
 """
 import json
+import random
 import time
+from dataclasses import dataclass
 
 from nicegui import ui
 
 from scara_app.gui import theme as t
 from scara_app.gui.point_to_point_tab import REASONS, ROBOT_DEFAULTS
-from scara_app.robot_model import JOINT_LIMITS, ik_xy, in_limits
+from scara_app.robot_model import ik_xy, in_limits
 from scara_app.trajectory import (
-    KIND_LABEL, Z_SAFE_DEFAULT, Arrive, BlockStart, Command, Dwell, Move, PlanError, Pose,
-    cartesian, plan_cycle,
+    KIND_LABEL, TUNING_RANGES, Z_CLEAR_DEFAULT, describe_error, Z_CLEAR_MAX, Arrive, BlockStart, Command, Dwell,
+    Goal, PlanError, Pose, Tuning, VacConfirm, cartesian, plan_cycle,
 )
 
 from . import trajectory_sandbox as sandbox
@@ -49,11 +56,37 @@ from .widgets import LogView, button, caps_label, deadman_button, number_box, re
 
 ROBOT = dict(ROBOT_DEFAULTS)
 
-TICK_S = 0.05             # muestreo del perfil -> /scara/target (20 Hz)
+TICK_S = 0.05             # revision del ciclo (el perfil lo genera el ESP32)
 MAX_DT_S = 0.2            # si la pagina se atrasa, no saltar mas que esto
 ARRIVE_GRACE_S = 0.25     # tras el ultimo punto, ignorar ARR viejos
-SETTLE_TIMEOUT_S = 8.0    # tiempo maximo (con dead-man) para que ARR=1
+GOAL_RESEND_S = 0.6       # sin GS = id en este tiempo (con dead-man) -> reenviar el tramo
+GOAL_MAX_RETRIES = 4
+SETTLE_WARN_S = 8.0       # sin ARR=1 en este tiempo (con dead-man): AVISO en la consola y se
+                          # sigue esperando (el RST sigue corrigiendo). Se repite cada 8 s.
 TOL_DEG, TOL_MM = 1.0, 1.0   # si el firmware no manda ARR: llegada por encoders
+VAC_RETRY_S = 0.4         # sin confirmacion de VAC en este tiempo -> reenviar vac0/vac1
+VAC_MAX_RETRIES = 3       # despues de esto se cancela el ciclo
+
+FF_RETRY_S = 0.4          # sin confirmacion de FF en /scara/limits -> reenviar "ff"
+FF_MAX_RETRIES = 3
+
+# Casillas de ajuste: (clave en TUNING_RANGES, etiqueta, formato, paso, atributo de Tuning)
+TUNING_FIELDS = [
+    ('V_MAX_DEG',     'V_MAX_DEG [°/s]',   '%.0f', 5,    'v_max_deg'),
+    ('A_MAX_DEG',     'A_MAX_DEG [°/s²]',  '%.0f', 10,   'a_max_deg'),
+    ('V_MAX_Z',       'V_MAX_Z [mm/s]',    '%.2f', 0.1,  'v_max_z'),
+    ('A_MAX_Z',       'A_MAX_Z [mm/s²]',   '%.1f', 0.5,  'a_max_z'),
+    ('FF_GAIN',       'FF_GAIN',           '%.2f', 0.05, 'ff_gain'),
+    ('BLEND_PCT',     'BLEND_PCT [%]',     '%.0f', 5,    'blend_pct'),
+    ('MIN_SEGMENT_S', 'MIN_SEGMENT_S [s]', '%.2f', 0.05, 'min_segment_s'),
+]
+
+
+@dataclass
+class FfSet:
+    """Primer paso del ciclo: manda FF_GAIN al ESP32 y espera FF en /scara/limits."""
+    value: float
+
 
 STATE_STYLE = {
     'idle':    ('LISTO', t.TEXT_MUTED),
@@ -80,6 +113,12 @@ class TrajectoryTab:
         self.active_block = None
         self.block_info = ''
         self.repeats = 1
+        self.retries = 0
+        self.goal_id = None            # id del tramo en curso (None: aun no se manda)
+        self.tuning = Tuning()
+        self._last_wait = ''
+        self.goal_sent_at = 0.0
+        self._id_counter = random.randint(1, 4000)   # ids distintos tras recargar la pagina
 
         ui.add_head_html(sandbox.head_html())
 
@@ -97,18 +136,31 @@ class TrajectoryTab:
                                 ui.label(label)
                                 ui.label('+').classes('tp-plus')
                 ui.element('div').classes('grow')
+                self.btn_start = button('Iniciar trayectoria', 'primary', self._start)
+                self.btn_stop = button('Detener', 'danger', self._stop)
+
+            # ---------- Ajustes del perfil (rangos en trajectory.TUNING_RANGES) ----------
+            with ui.element('div').classes('traj-params'):
+                self.tune = {}
+                for key, label, fmt, step, _attr in TUNING_FIELDS:
+                    lo, hi, default = TUNING_RANGES[key]
+                    with ui.element('div').classes('field traj-field'):
+                        caps_label(label)
+                        box = (ui.number(value=default, format=fmt, step=step, min=lo, max=hi)
+                               .props('outlined dense hide-bottom-space')
+                               .classes('num num-param'))
+                        box.tooltip(f'{lo:g} a {hi:g}')
+                        self.tune[key] = box
                 with ui.element('div').classes('field traj-field'):
-                    caps_label('Z segura [mm]')
-                    self.z_safe = number_box(Z_SAFE_DEFAULT, 'param',
-                                             minimum=JOINT_LIMITS['z'][0],
-                                             maximum=JOINT_LIMITS['z'][1])
+                    caps_label('Despeje Z [mm]')
+                    self.z_clear = number_box(Z_CLEAR_DEFAULT, 'param', minimum=0,
+                                              maximum=Z_CLEAR_MAX)
                 with ui.element('div').classes('field traj-field'):
                     caps_label('Repeticiones')
                     self.reps = (ui.number(value=1, format='%.0f', step=1, min=1, max=99)
                                  .props('outlined dense hide-bottom-space')
                                  .classes('num num-param'))
-                self.btn_start = button('Iniciar trayectoria', 'primary', self._start)
-                self.btn_stop = button('Detener', 'danger', self._stop)
+                button('Valores por defecto', 'text', self._tuning_defaults)
 
             with ui.element('div').classes('traj-split'):
                 # ---------- Sandbox + consola ----------
@@ -160,16 +212,19 @@ class TrajectoryTab:
             return
 
         self._js('scaraTraj.clearMarks()')
-        z_safe = read_number(self.z_safe)
+        z_clear = read_number(self.z_clear)
         reps = read_number(self.reps)
-        if z_safe is None or reps is None:
-            self.console.append('Llena Z segura y Repeticiones.', t.DANGER)
+        if z_clear is None or reps is None:
+            self.console.append('Llena Despeje Z y Repeticiones.', t.DANGER)
+            return
+        tuning = self._read_tuning()
+        if tuning is None:
             return
         q = real_pose(self.limits)
         start = Pose(q['th1'], q['th2'], q['z']) if q else None
         try:
             plan = plan_cycle(program, start, self.limits.get('Q4', 0.0), int(round(reps)),
-                              z_safe, ROBOT['d1'], ROBOT['d2'])
+                              z_clear, ROBOT['d1'], ROBOT['d2'], tuning)
         except PlanError as e:
             self.console.append(f'No se puede iniciar: {e}', t.DANGER)
             if e.block_id:
@@ -180,6 +235,13 @@ class TrajectoryTab:
 
         for w in plan.warnings:
             self.console.append(f'Aviso: {w}', t.CONNECTED)
+        plan.steps.insert(0, FfSet(tuning.ff_gain))
+        self.tuning = tuning
+        self.console.append(
+            f'Ajustes: V_MAX_DEG={tuning.v_max_deg:g} °/s · A_MAX_DEG={tuning.a_max_deg:g} °/s² · '
+            f'V_MAX_Z={tuning.v_max_z:g} mm/s · A_MAX_Z={tuning.a_max_z:g} mm/s² · '
+            f'FF_GAIN={tuning.ff_gain:.2f} · BLEND_PCT={tuning.blend_pct:g} % · '
+            f'MIN_SEGMENT_S={tuning.min_segment_s:g} s · despeje {z_clear:g} mm')
         self.plan, self.i, self.step_t = plan, 0, 0.0
         self.repeats = int(round(reps))
         self.active_block, self.block_info = None, ''
@@ -193,6 +255,23 @@ class TrajectoryTab:
         self.last_tick = time.monotonic()
         self._js('scaraTraj.setLocked(true)')
         self._render_state()
+
+    def _read_tuning(self):
+        """Lee las casillas de ajuste; None (y mensaje) si alguna esta vacia o fuera de rango."""
+        values = {}
+        for key, _label, _fmt, _step, attr in TUNING_FIELDS:
+            v = read_number(self.tune[key])
+            lo, hi, _ = TUNING_RANGES[key]
+            if v is None or not lo <= v <= hi:
+                self.console.append(f'{key} fuera de rango: debe estar entre {lo:g} y {hi:g}.',
+                                    t.DANGER)
+                return None
+            values[attr] = v
+        return Tuning(**values)
+
+    def _tuning_defaults(self):
+        for key, *_ in TUNING_FIELDS:
+            self.tune[key].value = TUNING_RANGES[key][2]
 
     def _stop(self):
         if self.state in ('armed', 'running'):
@@ -208,10 +287,7 @@ class TrajectoryTab:
             self.state = 'running'
             self.step_wall = time.monotonic()
             self.console.append('Dead-man presionado: arranca el ciclo.')
-        # Reenviar la consigna actual (por si el firmware la perdio)
-        step = self._step()
-        if self.state == 'running' and isinstance(step, Move):
-            self._send_pose(step.at(self.step_t))
+        # El tramo en curso lo conserva el ESP32 (su perfil se congela al soltar)
 
     def set_held(self, held):
         # app.py la llama con CADA latido (cada 100 ms): solo actuar en los cambios
@@ -239,6 +315,8 @@ class TrajectoryTab:
         self.i += 1
         self.step_t = 0.0
         self.step_wall = time.monotonic()
+        self.retries = 0
+        self.goal_id = None
 
     def _tick(self):
         now = time.monotonic()
@@ -261,25 +339,105 @@ class TrajectoryTab:
                     self.console.append('  Bomba ' + ('ON (pick)' if step.value else 'OFF (place)'))
                 else:
                     self.node.rotate(step.value)
-                    self.console.append(f'  Servo {step.value:+d}°')
+                    self.console.append(f'  Servo {step.value:+d}° (relativo)')
                 self._next()
-            elif isinstance(step, Move):
+            elif isinstance(step, Goal):
+                if 'GS' not in self.limits:
+                    self._abort('El firmware no tiene el perfil en el ESP32 (falta GS en '
+                                '/scara/limits): flashea el firmware nuevo.', release=True)
+                    return
+                if self.goal_id is None:
+                    self._send_goal(step, new_id=True)
+                    return
                 self.step_t += dt
-                done = self.step_t >= step.duration
-                pose = step.end if done else step.at(self.step_t)
-                self._send_pose(pose)
-                self.twin.set_ref((pose.th1, pose.th2), pose.z, target=self._target_xy())
-                if done:
-                    self._next()
+                fresh = self.limits_time > self.goal_sent_at
+                if fresh and self.limits.get('GS') == self.goal_id:
+                    need = 100 if step.final else self.tuning.blend_pct
+                    if self.limits.get('PG', 0) >= need:
+                        self._next()
+                        continue
+                    return
+                if self.step_t > GOAL_RESEND_S * (self.retries + 1):
+                    if self.retries >= GOAL_MAX_RETRIES:
+                        self._abort(f'El ESP32 no confirmo el tramo "{step.label}" '
+                                    f'(GS={self.limits.get("GS")}, esperado {self.goal_id}).',
+                                    block=step.block_id)
+                        return
+                    self.retries += 1
+                    self.console.append(f'  Tramo sin confirmar: reenvio ({self.retries})',
+                                        t.CONNECTED)
+                    self._send_goal(step, new_id=False)
                 return
             elif isinstance(step, Arrive):
                 self.step_t += dt
                 if self._arrived(step.target):
+                    ar = self.limits.get('AR')
+                    if isinstance(ar, str):
+                        for m, ch in enumerate(ar, start=1):
+                            if ch == '2':
+                                self.console.append(
+                                    f'  M{m} llego al final de carrera (al tope): '
+                                    f'{describe_error(m, self.limits.get(f"EC{m}", 0))} '
+                                    f'de la meta', t.CONNECTED)
                     self._next()
                     continue
-                if self.step_t > SETTLE_TIMEOUT_S:
-                    self._abort(f'El robot no llego a la pose en {SETTLE_TIMEOUT_S:.0f} s '
-                                f'(revisa zona muerta / finales).', block=step.block_id)
+                waiting = self._waiting_text()
+                if waiting and waiting != self._last_wait:
+                    self._last_wait = waiting
+                    self.progress.set_content(f'{self.block_info}<br>'
+                                              f'<span class="muted">esperando {waiting}</span>')
+                if self.step_t > SETTLE_WARN_S * (self.retries + 1):
+                    self.retries += 1          # aqui cuenta los avisos (se reinicia en _next)
+                    self.console.append(
+                        f'  Aviso: {self.step_t:.0f} s sin llegar · {waiting or "sin diagnostico"}'
+                        f' · el RST sigue corrigiendo (STOP para cancelar)', t.CONNECTED)
+                return
+            elif isinstance(step, FfSet):
+                if 'FF' not in self.limits:
+                    self.console.append('  Aviso: el firmware no reporta FF; FF_GAIN no se '
+                                        'cambio (flashea el firmware nuevo).', t.CONNECTED)
+                    self._next()
+                    continue
+                want = int(round(step.value * 100))
+                if self.step_t == 0.0 and self.retries == 0:
+                    self.node.set_ff_gain(step.value)
+                self.step_t += dt
+                fresh = self.limits_time > self.step_wall + 0.1
+                if fresh and self.limits['FF'] == want:
+                    self.console.append(f'  FF_GAIN = {step.value:.2f} confirmado en el ESP32')
+                    self._next()
+                    continue
+                if self.step_t > FF_RETRY_S * (self.retries + 1):
+                    if self.retries >= FF_MAX_RETRIES:
+                        self._abort(f'El ESP32 no confirmo FF_GAIN = {step.value:.2f} '
+                                    f'(FF={self.limits.get("FF")}).')
+                        return
+                    self.retries += 1
+                    self.node.set_ff_gain(step.value)
+                return
+            elif isinstance(step, VacConfirm):
+                self.step_t += dt
+                if 'VAC' not in self.limits:          # firmware viejo: no se puede confirmar
+                    self._next()
+                    continue
+                fresh = self.limits_time > self.step_wall + 0.1
+                if fresh and bool(self.limits['VAC']) == step.on:
+                    if self.retries:
+                        self.console.append(f'  Bomba confirmada {"ON" if step.on else "OFF"} '
+                                            f'tras {self.retries} reintento(s)', t.CONNECTED)
+                    self._next()
+                    continue
+                if self.step_t > VAC_RETRY_S * (self.retries + 1):
+                    if self.retries >= VAC_MAX_RETRIES:
+                        self._abort(f'El ESP32 no confirmo la bomba {"ON" if step.on else "OFF"} '
+                                    f'(VAC={int(bool(self.limits["VAC"]))} tras '
+                                    f'{VAC_MAX_RETRIES} reenvios).', block=step.block_id)
+                        return
+                    self.retries += 1
+                    self.node.vacuum(step.on)
+                    self.console.append(f'  Bomba sin confirmar: reenvio '
+                                        f'{"vac1" if step.on else "vac0"} ({self.retries})',
+                                        t.CONNECTED)
                 return
             elif isinstance(step, Dwell):
                 self.step_t += dt
@@ -309,9 +467,29 @@ class TrajectoryTab:
         x, y, _, _ = cartesian(end, ROBOT['d1'], ROBOT['d2'])
         return (x, y)
 
-    def _send_pose(self, pose):
-        x, y, z, codo = cartesian(pose, ROBOT['d1'], ROBOT['d2'])
-        self.node.stream_target(x, y, z, ROBOT, codo)
+    def _send_goal(self, step, new_id):
+        """Manda el tramo al ESP32 (meta + duracion + id); el ESP32 interpola."""
+        if new_id:
+            self._id_counter = self._id_counter % 9999 + 1
+            self.goal_id = self._id_counter
+            kind = 'meta' if step.final else 'intermedio'
+            self.console.append(f'  → {step.label} ({kind}, {step.duration:.1f} s)')
+        x, y, z, codo = cartesian(step.end, ROBOT['d1'], ROBOT['d2'])
+        self.node.send_goal(x, y, z, ROBOT, codo, step.duration, self.goal_id)
+        self.goal_sent_at = time.monotonic()
+        self.twin.set_ref((step.end.th1, step.end.th2), step.end.z, target=self._target_xy())
+
+    def _waiting_text(self):
+        """Motores que aun no llegan, con su error y voltaje (campos AR/EC/U del firmware)."""
+        d = self.limits
+        ar = d.get('AR')
+        if not isinstance(ar, str) or len(ar) != 3:
+            return ''
+        parts = []
+        for m in (1, 2, 3):
+            if ar[m - 1] == '0' and f'EC{m}' in d:
+                parts.append(f'{describe_error(m, d[f"EC{m}"])}, u = {d.get(f"U{m}", 0):+.1f} V')
+        return ' · '.join(parts)
 
     def _arrived(self, target):
         if self.step_t < ARRIVE_GRACE_S or self.limits_time < self.step_wall + ARRIVE_GRACE_S:
@@ -339,6 +517,7 @@ class TrajectoryTab:
             return
         if release:
             self.node.release_control()      # borra la consigna en el firmware
+        self.node.vacuum(False)              # ciclo cancelado: la bomba no se queda prendida
         self._js('scaraTraj.setActive(null); scaraTraj.setLocked(false)')
         bad = block or self.active_block
         if bad:

@@ -24,6 +24,10 @@ motor_config_t motors[NUM_MOTORS] = {
 
 /* Configura un final de carrera con pull-up interno: el final se conecta
  * a GND y, presionado, el pin lee 0. */
+/* OBSERVADORES: ultima direccion y duty escritos (ver motor_get_volts) */
+static volatile int8_t   s_sign[NUM_MOTORS];
+static volatile uint16_t s_duty[NUM_MOTORS];
+
 static void config_limit_input(int pin)
 {
     if (pin == NO_PIN) return;   /* ese final no existe */
@@ -75,6 +79,7 @@ void motors_init(void)
             .hpoint     = 0,
         };
         ledc_channel_config(&ledc_channel);
+        s_duty[i] = (uint16_t)motors[i].homing_speed;   /* OBSERVADORES */
     }
 
     /* 3. Finales de carrera */
@@ -88,12 +93,14 @@ void motor_set_dir(int i, int d1, int d2)
 {
     gpio_set_level(motors[i].dir1_pin, d1);
     gpio_set_level(motors[i].dir2_pin, d2);
+    s_sign[i] = (d1 && !d2) ? 1 : ((!d1 && d2) ? -1 : 0);   /* OBSERVADORES */
 }
 
 void motor_set_duty(int i, uint32_t duty)
 {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, motors[i].pwm_channel, duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, motors[i].pwm_channel);
+    s_duty[i] = (uint16_t)(duty > 1023u ? 1023u : duty);   /* OBSERVADORES */
 }
 
 void motor_brake(int i) { motor_set_dir(i, 1, 1); }
@@ -120,3 +127,9 @@ bool limit_r_pressed(int i)
 }
 
 bool motor_has_limit_r(int i) { return motors[i].ls_r_pin != NO_PIN; }
+
+/* OBSERVADORES */
+float motor_get_volts(int i)
+{
+    return (float)s_sign[i] * (float)s_duty[i] * (MOTOR_V_SUPPLY / 1023.0f);
+}

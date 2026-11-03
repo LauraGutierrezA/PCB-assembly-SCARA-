@@ -17,6 +17,9 @@ Eventos: ('status', (texto, cambio)), ('connection', bool),
          ('wiimote', dict)             estado del control con Wiimote (~15 Hz, solo mientras
                                        hay Wiimote o esta activado; ver wiimote_bridge.py)
          ('wiimote_log', (texto, nivel))
+         ('obs', [n, M1: w_med w_luen w_kal i_luen i_kal, M2..., M3...])   OBSERVADORES:
+                                       /scara/obs, 25 Hz solo mientras alguien ve la
+                                       pestana Observadores (latido "obs1")
 
 El control con Wiimote vive en self.wiimote (WiimoteBridge): UNA instancia en el
 nodo, no una por pantalla, asi varias paginas abiertas no mandan consignas duplicadas.
@@ -26,6 +29,7 @@ import time
 from collections import deque
 
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data   # OBSERVADORES: /scara/obs es best effort
 from sensor_msgs.msg import Imu, Joy
 from std_msgs.msg import Float32MultiArray, String
 
@@ -50,6 +54,9 @@ class ScaraWebNode(Node):
         self.create_subscription(String, 'scara/status', self._on_status, 10)
         self.create_subscription(String, 'scara/ik', self._on_ik, 10)
         self.create_subscription(String, 'scara/limits', self._on_limits, 10)
+        # OBSERVADORES: estimaciones de Luenberger y Kalman de los 3 motores
+        self.create_subscription(Float32MultiArray, 'scara/obs', self._on_obs,
+                                 qos_profile_sensor_data)
 
         self._lock = threading.Lock()
         self._events = deque(maxlen=MAX_EVENTS)
@@ -179,6 +186,12 @@ class ScaraWebNode(Node):
         """Servo de la boquilla: giro relativo de +90 o -90 grados."""
         self.send_command(f'rot {int(delta_deg):+d}')
 
+    # ---------------- Observadores (OBSERVADORES) ----------------
+    def observers_keepalive(self):
+        """Latido de la pestana Observadores (cada 1 s mientras alguien la ve).
+        Sin latido, el ESP32 deja de publicar /scara/obs a los 2.5 s."""
+        self._publish_cmd_quiet('obs1')
+
     def _send_test(self, text: str):
         msg = String()
         msg.data = text
@@ -205,6 +218,10 @@ class ScaraWebNode(Node):
         self._last_limits = data
         self.wiimote.on_limits(data)
         self._push('limits', data)
+
+    def _on_obs(self, msg: Float32MultiArray):
+        if len(msg.data) == 16:
+            self._push('obs', list(msg.data))
 
     def _on_wiimote_joy(self, msg: Joy):
         self.wiimote.on_joy([name for name, v in zip(BUTTON_NAMES, msg.buttons) if v])

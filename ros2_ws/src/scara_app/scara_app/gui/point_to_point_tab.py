@@ -45,7 +45,7 @@ REASONS = {
     'OUT_OF_REACH': 'fuera del alcance en XY',
     'BAD_PARAMS':   'parametros invalidos (d1, d2 deben ser > 0 y av distinto de 0)',
     'BAD_MESSAGE':  'mensaje con formato incorrecto',
-    'OUT_OF_RANGE': 'fuera del rango de la articulacion (M1, M2: -90..90 grados; M3: 19.3..126 mm)',
+    'OUT_OF_RANGE': 'fuera del rango de la articulacion (M1, M2: -90..90 grados; M3: 0..109.2 mm)',
 }
 
 

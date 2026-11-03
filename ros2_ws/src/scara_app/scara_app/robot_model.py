@@ -24,9 +24,9 @@ import math
 JOINT_LIMITS = {
     'th1': (-85.0, 85.0),    # grados (M1_L_DEG, M1_R_DEG)
     'th2': (-90.0, 90.0),    # grados
-    'z':   (19.3, 126.0),    # mm sobre el piso de la base
+    'z':   (0.0, 109.2),     # mm sobre el piso (medido con la herramienta, nov 2026)
 }
-JOINT_HOME = {'th1': 0.0, 'th2': 0.0, 'z': 72.6}   # donde se estaciona tras el homing
+JOINT_HOME = {'th1': 0.0, 'th2': 0.0, 'z': 54.6}   # donde se estaciona tras el homing
 
 # Dead-man switch: la interfaz manda "dm1" por /scara/cmd con este periodo
 # mientras el operador lo mantiene; el firmware detiene los motores si pasan

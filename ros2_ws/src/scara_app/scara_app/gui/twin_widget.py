@@ -177,7 +177,7 @@ class PlanView(QWidget):
 
 
 class ZBar(QWidget):
-    """Barra de z (19.3 .. 126 mm): triangulo cian = consigna, barra gris = real."""
+    """Barra de z (0 .. 109.2 mm, JOINT_LIMITS['z']): triangulo cian = consigna, barra gris = real."""
 
     def __init__(self, parent=None):
         super().__init__(parent)

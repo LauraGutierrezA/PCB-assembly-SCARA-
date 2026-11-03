@@ -74,6 +74,10 @@ def parse_limits(text: str) -> dict:
     E     -> int   (cuentas del encoder)
     Q     -> float (Q1, Q2 en grados; Q3 en mm desde el piso)
     CAL   -> True/False (el homingPRO ya calibro; si no, Q no vale)
+    PG, GS -> int  (trayectoria: avance del tramo 0..100 e id del tramo, profile.c)
+    FF     -> int  (FF_GAIN del feedforward en %, controlRST.c)
+    AR     -> str  ('101': llego M1, M2, M3)   EC1..EC3 -> int (error en cuentas)
+    U1..U3 -> float (voltaje aplicado a cada motor [V])
     """
     out = {}
     for token in text.split():
@@ -82,8 +86,12 @@ def parse_limits(text: str) -> dict:
         key, value = token.split('=', 1)
         value = value.strip()
         try:
-            if key.startswith('E'):
+            if key == 'AR':
+                out[key] = value
+            elif key.startswith('E') or key in ('PG', 'GS', 'FF'):
                 out[key] = int(value)
+            elif key in ('U1', 'U2', 'U3'):
+                out[key] = float(value)
             elif key.startswith('Q'):
                 out[key] = float(value)
             else:

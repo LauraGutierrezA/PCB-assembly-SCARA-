@@ -4,7 +4,7 @@ twin.py - Gemelo del robot en la interfaz web: Planta (SVG) y 3D (three.js).
 Muestra dos robots superpuestos (colores aprobados):
   - consigna:  cian translucido (a donde va a ir)
   - real:      gris solido (encoders: Q1, Q2, Q3 de /scara/limits)
-y una barra de z (19.3 .. 126 mm) con las dos alturas.
+y una barra de z (0 .. 109.2 mm, JOINT_LIMITS['z']) con las dos alturas.
 
 La planta tiene dos capas con el mismo viewBox:
   - fondo (malla, zona alcanzable, ejes): se dibuja una sola vez.

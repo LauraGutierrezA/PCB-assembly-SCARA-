@@ -61,6 +61,15 @@
  *   /scara/test_cmd (std_msgs/String, PC -> ESP32):
  *                  "run <motor 1-3> <L|R> <velocidad %> <segundos>"
  *                  "stop <motor 1-3>"  |  "stop all"
+ *   OBSERVADORES (pestana "Observadores", components/observers):
+ *   /scara/cmd      "obs1" -> latido: la pagina lo manda cada 1 s mientras
+ *                   alguien ve la pestana. Sin latido en 2.5 s se deja de
+ *                   publicar /scara/obs (no ocupa el UART si nadie mira).
+ *   /scara/obs      (std_msgs/Float32MultiArray, ESP32 -> PC, best effort),
+ *                   16 valores cada 40 ms (promedio de 5 muestras de 8 ms):
+ *                   [n, M1: w_med w_luen w_kal i_luen i_kal, M2: ..., M3: ...]
+ *                   n = contador; w en rad/s del eje del motor; i en A.
+ *
  *   /scara/limits   (std_msgs/String, ESP32 -> PC): end-stops, motores y encoders,
  *                  "L1=0 R1=1 L2=0 R2=0 L3=0 R3=0 M1=0 M2=1 M3=0
  *                   E1=1234 E2=-56 E3=0 Q1=12.3 Q2=-0.5 Q3=70.5 CAL=1"
@@ -102,6 +111,7 @@
 #include "motor_test.h"
 #include "effector.h"          /* TRAYECTORIA: ventosa + servo */
 #include "profile.h"           /* TRAYECTORIA: perfil generado en el ESP32 */
+#include "observers.h"         /* OBSERVADORES: Luenberger + Kalman de los 3 motores */
 
 /* ================================================================
  *  "BOTON" DEL CONTROLADOR (IK, consignas y trayectorias)
@@ -129,6 +139,7 @@
 #define TARGET_LEN_GOAL       13      /* ... + T [s] + id  (trayectoria, perfil en el ESP32) */
 #define TEST_BUF_LEN          48
 #define LIMITS_BUF_LEN        300     /* con el diagnostico AR/EC/U de la trayectoria */
+#define OBS_PERIOD_MS         (OBS_DECIM * CONTROL_LOOP_MS)   /* OBSERVADORES: 40 ms */
 
 /* El periodo de control (8 ms) necesita ticks de 1 ms: CONFIG_FREERTOS_HZ=1000
  * (menuconfig -> Component config -> FreeRTOS -> Kernel -> configTICK_RATE_HZ). */
@@ -147,6 +158,9 @@ static void control_task(void *arg)
 {
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
+        /* OBSERVADORES: primero, con el voltaje que se aplico en el periodo
+         * anterior (el control aun no escribe el nuevo) */
+        observers_update();
         homing_pro_update();
         control_update();
         motor_test_update();
@@ -165,6 +179,11 @@ static rcl_subscription_t target_sub;
 static rcl_publisher_t   status_pub;
 static rcl_publisher_t   ik_pub;
 static rcl_timer_t       status_timer;
+/* OBSERVADORES */
+static rcl_publisher_t   obs_pub;
+static rcl_timer_t       obs_timer;
+static std_msgs__msg__Float32MultiArray obs_msg;
+static float             obs_buf[OBS_MSG_LEN];
 static rclc_executor_t   executor;
 
 static std_msgs__msg__String cmd_msg;
@@ -228,6 +247,8 @@ static void cmd_callback(const void *msgin)
         control_deadman_release();
     } else if (cmd_is(m, "release")) {
         control_release();
+    } else if (cmd_is(m, "obs1")) {      /* OBSERVADORES: latido de la pestana */
+        observers_keepalive();
     }
     /* comandos desconocidos se ignoran */
 }
@@ -404,6 +425,20 @@ static void status_timer_cb(rcl_timer_t *timer, int64_t last_call_time)
     last_pub = now;
 }
 
+/* OBSERVADORES: cada 40 ms publica la ultima muestra promediada, solo si
+ * alguien esta viendo la pestana (latido "obs1"). */
+static void obs_timer_cb(rcl_timer_t *timer, int64_t last_call_time)
+{
+    (void)last_call_time;
+    if (timer == NULL) return;
+    if (!observers_take(obs_buf)) return;     /* tambien vacia la muestra vieja */
+    if (!observers_streaming()) return;
+    obs_msg.data.data = obs_buf;
+    obs_msg.data.size = OBS_MSG_LEN;
+    obs_msg.data.capacity = OBS_MSG_LEN;
+    RCSOFT(rcl_publish(&obs_pub, &obs_msg, NULL));
+}
+
 static bool create_entities(void)
 {
     allocator = rcl_get_default_allocator();
@@ -425,6 +460,17 @@ static bool create_entities(void)
         &limits_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "scara/limits"));
     RCRETURN(rclc_timer_init_default2(
         &status_timer, &support, RCL_MS_TO_NS(STATUS_PERIOD_MS), status_timer_cb, true));
+    /* OBSERVADORES: best effort (si se pierde una muestra no se reenvia).
+     * Es el 4o publicador: RMW_UXRCE_MAX_PUBLISHERS=4 en app-colcon.meta. */
+    RCRETURN(rclc_publisher_init_best_effort(
+        &obs_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32MultiArray),
+        "scara/obs"));
+    RCRETURN(rclc_timer_init_default2(
+        &obs_timer, &support, RCL_MS_TO_NS(OBS_PERIOD_MS), obs_timer_cb, true));
+    obs_msg.layout.dim.data = NULL;
+    obs_msg.layout.dim.size = 0;
+    obs_msg.layout.dim.capacity = 0;
+    obs_msg.layout.data_offset = 0;
 
     /* Memoria fija para el mensaje entrante (micro-ROS no hace malloc aqui) */
     cmd_msg.data.data = cmd_buf;
@@ -447,7 +493,8 @@ static bool create_entities(void)
     target_msg.layout.data_offset = 0;
 
     executor = rclc_executor_get_zero_initialized_executor();
-    RCRETURN(rclc_executor_init(&executor, &support.context, 4, &allocator));
+    /* 3 suscripciones + 2 timers (status y OBSERVADORES) */
+    RCRETURN(rclc_executor_init(&executor, &support.context, 5, &allocator));
     RCRETURN(rclc_executor_add_subscription(&executor, &cmd_sub, &cmd_msg,
                                             &cmd_callback, ON_NEW_DATA));
     RCRETURN(rclc_executor_add_subscription(&executor, &target_sub, &target_msg,
@@ -455,6 +502,7 @@ static bool create_entities(void)
     RCRETURN(rclc_executor_add_subscription(&executor, &test_sub, &test_msg,
                                             &test_cmd_callback, ON_NEW_DATA));
     RCRETURN(rclc_executor_add_timer(&executor, &status_timer));
+    RCRETURN(rclc_executor_add_timer(&executor, &obs_timer));   /* OBSERVADORES */
 
     last_seq = UINT32_MAX;   /* forzar publicacion inmediata al conectar */
     return true;
@@ -519,6 +567,7 @@ void app_main(void)
     motors_init();
     encoders_init();
     effector_init();          /* TRAYECTORIA */
+    observers_init();         /* OBSERVADORES: calcula L y K (antes de la tarea de control) */
 
 #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
     rmw_uros_set_custom_transport(

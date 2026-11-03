@@ -40,7 +40,7 @@ SEED = {
         {'id': 'b5', 'kind': 'goto', 'x': 800, 'y': 330,
          'params': {'x': 180, 'y': 0, 'z': 50, 'codo': 1, 'safe': True}},
         {'id': 'b6', 'kind': 'goto', 'x': 530, 'y': 330,
-         'params': {'x': 180, 'y': 0, 'z': 72.6, 'codo': 1, 'safe': False}},
+         'params': {'x': 180, 'y': 0, 'z': 54.6, 'codo': 1, 'safe': False}},
     ],
     'links': [{'from': 'b1', 'to': 'b2'}, {'from': 'b2', 'to': 'b3'},
               {'from': 'b3', 'to': 'b4'}, {'from': 'b4', 'to': 'b5'},
@@ -110,11 +110,12 @@ window.scaraTraj = (function () {
         `<div class="tb-line"><span class="tb-k">Codo</span>` +
         seg('codo', p.codo, [['+1', 1], ['−1', -1]]) + `</div>` +
         `<button type="button" class="tb-check ${p.safe ? 'on' : ''}" data-k="safe">` +
-        `<i></i>Pasar por Z segura</button>`;
+        `<i></i>Despeje Z (vertical)</button>`;
     }
     if (b.kind === 'rotate') {
-      return `<div class="tb-line"><span class="tb-k">Giro</span>` +
-        seg('dir', p.dir, [['+90°', 90], ['−90°', -90]]) + `</div>` +
+      const deg = (p.deg !== undefined) ? p.deg : (p.dir !== undefined ? p.dir : 45);
+      return row('Ángulo', 'deg', deg, '°') +
+        `<div class="tb-note">relativo al actual · servo −90…+90°</div>` +
         row('Espera', 'wait', p.wait, 's');
     }
     const what = b.kind === 'pick' ? 'Bomba ON' : 'Bomba OFF';
@@ -465,6 +466,12 @@ _CSS = """
 }
 .tp-ghost.over { border-color: %ACCENT%; }
 .traj-field .num-param { width: 104px; }
+.traj-params {
+  display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 14px; border-bottom: 1px solid %DIVIDER%; margin-bottom: 14px;
+}
+.traj-params .caps { white-space: nowrap; }
+.traj-toolbar { border-bottom: none; margin-bottom: 0; }
 
 .traj-split { display: flex; gap: 18px; flex: 1 1 auto; min-height: 0; }
 .traj-left { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; gap: 10px; }

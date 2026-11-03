@@ -113,7 +113,7 @@ class PointToPointTab:
         self.twin.set_ref(q, z if q is not None else None, target=(x, y))
 
     def _plan_click(self, x, y):
-        z = read_number(self.fields['Z'], 72.6)
+        z = read_number(self.fields['Z'], 54.6)
         codo = self.codo.value()
         if local_solution(x, y, z, codo) is None and local_solution(x, y, z, -codo) is not None:
             self.codo.set_index(0 if -codo > 0 else 1)

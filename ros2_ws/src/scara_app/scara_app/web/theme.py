@@ -395,6 +395,18 @@ button, .q-btn, .segment, input {{ touch-action: manipulation; }}
 .wm-axis .q-field__native, .wm-axis .q-field__append {{ color: {t.TEXT} !important; font-family: {MONO}; }}
 .wm-axis .q-checkbox__label {{ font-size: 14px; color: {t.TEXT_MUTED}; }}
 
+/* ---------------- Observadores (OBSERVADORES) ---------------- */
+.obs-body {{ overflow-y: auto; -webkit-overflow-scrolling: touch; gap: 14px; }}
+.obs-bar {{ display: flex; align-items: flex-end; gap: 28px; flex-wrap: wrap; }}
+.obs-bar .btn {{ min-height: 44px; }}
+.obs-info {{ display: flex; flex-direction: column; gap: 2px; }}
+.obs-status {{ font-family: {MONO}; font-size: 16px; color: {t.TEXT}; }}
+.obs-deadman {{ min-height: 56px; }}
+.obs-motors {{ display: flex; flex-direction: column; gap: 14px; }}
+.obs-panel {{ gap: 8px; padding: 12px 14px 10px; }}
+.obs-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }}
+.obs-chart {{ height: 190px !important; width: 100%; min-width: 0; }}
+
 /* ---------------- Vertical (iPad parado) ---------------- */
 @media (max-width: 900px) {{
   .header {{ gap: 12px; padding-left: 16px; }}
@@ -407,6 +419,7 @@ button, .q-btn, .segment, input {{ touch-action: manipulation; }}
   .split > .left {{ flex: 0 0 auto; }}
   .split > .right {{ flex: 0 0 auto; height: 560px; }}
   .compact .log-wrap {{ flex: 0 0 160px; }}
+  .obs-row {{ grid-template-columns: 1fr; gap: 6px; }}
 }}
 </style>
 """

@@ -24,6 +24,13 @@ desactiva al salir de esa pestana, al cerrarse la pagina y con STOP / Esc.
 Cada pantalla que abre la pagina (iPad, PC, celular) tiene su propia copia
 de la interfaz; todas mandan los comandos al mismo nodo ROS 2.
 
+OBSERVADORES (bypass): entrar a la pestana "Observadores" NO hace nada de lo
+anterior (no suelta el dead-man, no cancela la Trayectoria, no desactiva el
+Wiimote). La pestana desde la que se llego queda como "duena" (owner): al
+salir de Observadores hacia otra pestana se aplica la regla normal como si se
+saliera de la duena; si se vuelve a la duena, todo sigue igual. El dead-man
+de Observadores ('obs') se reenvia a la pestana duena.
+
 Para agregar una pestana nueva:
   1. Crear web/<nombre>_tab.py con una clase que reciba (node, hub) y
      escuche los eventos con hub.on('status' | 'connection' | 'ik' | 'limits', fn).
@@ -37,12 +44,14 @@ from . import theme
 from .circuit_test_tab import CircuitTestTab
 from .dk_tab import DkTab
 from .homing_tab import HomingTab
+from .observers_tab import ObserversTab     # OBSERVADORES
 from .point_to_point_tab import PointToPointTab
 from .trajectory_tab import TrajectoryTab   # TRAYECTORIA
 from .widgets import Hub, button, caps_label
 from .wiimote_tab import WiimoteTab
 
 POLL_PERIOD_S = 0.05   # cada cuanto la pagina revisa eventos nuevos del nodo
+OBS_TAB = 'obs'        # OBSERVADORES: pestana con bypass (no detiene nada al entrar)
 
 TABS = [
     ('homing', 'Homing', HomingTab),
@@ -51,6 +60,7 @@ TABS = [
     ('traj', 'Trayectoria', TrajectoryTab),   # TRAYECTORIA
     ('circuit', 'Prueba de circuito', CircuitTestTab),
     ('wiimote', 'Wiimote', WiimoteTab),
+    ('obs', 'Observadores', ObserversTab),    # OBSERVADORES
     # Aqui iran: 'Jog', 'Caracterizacion', ...
 ]
 
@@ -80,8 +90,11 @@ def build_ui(node):
         def on_deadman(e):
             args = e.args or {}
             held = bool(args.get('held'))
+            source = args.get('source')
+            if source == OBS_TAB:                # OBSERVADORES: es el de la duena
+                source = current['owner']
             if held and args.get('start'):
-                page = pages.get(args.get('source'))
+                page = pages.get(source)
                 if page is not None and hasattr(page, 'on_deadman_start'):
                     page.on_deadman_start()      # primero la consigna
             if held:
@@ -93,22 +106,37 @@ def build_ui(node):
                     page.set_held(held)
         ui.on('deadman', on_deadman)
 
-        current = {'tab': TABS[0][0]}      # pestana que esta viendo ESTA pagina
+        # tab: pestana que esta viendo ESTA pagina
+        # owner: OBSERVADORES, ultima pestana que no es Observadores (la que
+        #        sigue "mandando" mientras se ven las graficas)
+        current = {'tab': TABS[0][0], 'owner': TABS[0][0]}
 
         def disarm_wiimote_if_viewing():
-            if current['tab'] == 'wiimote':
+            if current['owner'] == 'wiimote':
                 node.wiimote.set_enabled(False)
 
         def on_tab_change(e):
+            name = getattr(e.value, '_props', {}).get('name', e.value)
+            prev = current['tab']
+            current['tab'] = name
+            for page in pages.values():          # OBSERVADORES: que pestana se ve
+                if hasattr(page, 'on_view_change'):
+                    page.on_view_change(name)
+            # OBSERVADORES (bypass): entrar a Observadores no detiene nada
+            if name == OBS_TAB:
+                pages[OBS_TAB].set_owner(current['owner'])
+                return
+            # Volver de Observadores a la duena: todo sigue igual
+            if prev == OBS_TAB and name == current['owner']:
+                return
             release_deadman()
             node.deadman_release()
-            name = getattr(e.value, '_props', {}).get('name', e.value)
             for page in pages.values():          # TRAYECTORIA: aborta el ciclo
                 if hasattr(page, 'on_tab_change'):
                     page.on_tab_change(name)
             if name != 'wiimote':
                 disarm_wiimote_if_viewing()
-            current['tab'] = name
+            current['owner'] = name
             if name == 'circuit':
                 node.release_control()
         tabs.on_value_change(on_tab_change)

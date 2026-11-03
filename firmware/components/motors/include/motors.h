@@ -47,4 +47,13 @@ bool limit_r_pressed(int i);
 /* true si el motor i tiene segundo final de carrera (ls_r_pin != NO_PIN). */
 bool motor_has_limit_r(int i);
 
+/* OBSERVADORES: voltaje que se le esta aplicando al motor i [V], con el
+ * signo del control (u > 0 -> (IN1, IN2) = (1, 0)). Se arma con la ultima
+ * direccion y el ultimo duty escritos, sin importar quien los escribio
+ * (control, homingPRO o prueba de circuito):
+ *   (1,0) -> +duty/1023 * MOTOR_V_SUPPLY     (0,1) -> -duty/1023 * MOTOR_V_SUPPLY
+ *   freno (1,1) o libre (0,0) -> 0 V */
+#define MOTOR_V_SUPPLY  12.0f
+float motor_get_volts(int i);
+
 #endif /* MOTORS_H */
